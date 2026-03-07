@@ -37,7 +37,7 @@ function MilestoneNodeComponent({ data, selected }: NodeProps) {
           {format(new Date(d.createdAt), "MMM d, yyyy · h:mm a")}
         </p>
       </div>
-      <Handle type="source" position={Position.Right} className="!w-2 !h-2 !bg-muted-foreground !border-none" isConnectable={false} />
+      {d.hasChildren && <Handle type="source" position={Position.Right} className="!w-2 !h-2 !bg-muted-foreground !border-none" isConnectable={false} />}
     </>
   );
 }
