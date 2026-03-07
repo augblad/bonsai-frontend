@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, Loader2 } from "lucide-react";
-import { projectCreate } from "@/lib/api";
+import { projectCreate, openDirectory } from "@/lib/api";
 import { toast } from "sonner";
 
 interface Props {
@@ -80,7 +80,10 @@ export function CreateProjectModal({ open, onOpenChange, onCreated }: Props) {
                 onChange={(e) => setPath(e.target.value)}
                 className="flex-1 font-mono text-sm"
               />
-              <Button variant="outline" size="sm" onClick={() => setPath("/Users/dev/projects/" + (name || "new-project").toLowerCase().replace(/\s+/g, "-"))}>
+              <Button variant="outline" size="sm" onClick={async () => {
+                const result = await openDirectory("Select Project Folder", path || undefined);
+                if (!result.canceled && result.path) setPath(result.path);
+              }}>
                 Browse
               </Button>
             </div>

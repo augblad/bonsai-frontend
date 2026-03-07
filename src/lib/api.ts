@@ -250,3 +250,29 @@ export async function milestoneDelete(_projectPath: string, _milestoneId: string
   };
   return { status: "success" };
 }
+
+// ── Dialogs ────────────────────────────────────────────────
+
+export interface DialogResult {
+  canceled: boolean;
+  path: string | null;
+}
+
+/** Open a native directory picker. Falls back to prompt() in dev/mock mode. */
+export async function openDirectory(title?: string, defaultPath?: string): Promise<DialogResult> {
+  if (eApi) return eApi.openDirectory(title, defaultPath);
+  // Mock fallback for dev/browser mode
+  const result = window.prompt("Enter directory path:", defaultPath || "/home/user/projects");
+  return { canceled: result === null, path: result };
+}
+
+/** Open a native file picker. Falls back to prompt() in dev/mock mode. */
+export async function openFile(
+  title?: string,
+  defaultPath?: string,
+  filters?: { name: string; extensions: string[] }[],
+): Promise<DialogResult> {
+  if (eApi) return eApi.openFile(title, defaultPath, filters);
+  const result = window.prompt("Enter file path:", defaultPath || "/home/user/file.txt");
+  return { canceled: result === null, path: result };
+}
