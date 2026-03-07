@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ReactFlow,
+  ReactFlowProvider,
   Background,
   Controls,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   type Node,
   type Edge,
   BackgroundVariant,
@@ -62,10 +64,11 @@ function loadPositions(projectPath: string): Record<string, { x: number; y: numb
   }
 }
 
-export function ProjectWorkspace() {
+function ProjectWorkspaceInner() {
   const { projectPath } = useParams<{ projectPath: string }>();
   const decodedPath = decodeURIComponent(projectPath || "");
   const navigate = useNavigate();
+  const { fitView, getNodes } = useReactFlow();
 
   const [treeData, setTreeData] = useState<ProjectTreeResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -159,10 +162,10 @@ export function ProjectWorkspace() {
 
   // Save positions on drag
   const onNodeDragStop = useCallback(
-    (_event: React.MouseEvent, _node: Node, allNodes: Node[]) => {
-      savePositions(decodedPath, allNodes);
+    () => {
+      savePositions(decodedPath, getNodes());
     },
-    [decodedPath]
+    [decodedPath, getNodes]
   );
 
   // Reset layout
@@ -172,8 +175,9 @@ export function ProjectWorkspace() {
     const { newNodes, newEdges } = buildLayout(treeData, false);
     setNodes(newNodes);
     setEdges(newEdges);
+    setTimeout(() => fitView({ padding: 0.3 }), 50);
     toast.success("Layout reset to default");
-  }, [treeData, decodedPath, buildLayout, setNodes, setEdges]);
+  }, [treeData, decodedPath, buildLayout, setNodes, setEdges, fitView]);
 
   const onNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
@@ -373,5 +377,13 @@ export function ProjectWorkspace() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export function ProjectWorkspace() {
+  return (
+    <ReactFlowProvider>
+      <ProjectWorkspaceInner />
+    </ReactFlowProvider>
   );
 }
