@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
+import { Info, Loader2 } from "lucide-react";
 import { projectCreate } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -90,7 +90,7 @@ export function CreateProjectModal({ open, onOpenChange, onCreated }: Props) {
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading && <IconLoader2 size={16} className="mr-2 animate-spin" />}
+            {loading && <Loader2 size={16} className="mr-2 animate-spin" />}
             Create Project
           </Button>
         </DialogFooter>

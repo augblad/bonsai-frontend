@@ -12,12 +12,7 @@ import {
   type NodeMouseHandler,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import {
-  IconArrowLeft,
-  IconPlus,
-  IconSettings,
-  IconLoader2,
-} from "@tabler/icons-react";
+import { ArrowLeft, Plus, Settings, Loader2 } from "lucide-react";
 import {
   projectTree,
   milestoneCreate,
@@ -234,7 +229,7 @@ export function ProjectWorkspace() {
           <Skeleton className="w-32 h-8" />
         </div>
         <div className="flex-1 flex items-center justify-center">
-          <IconLoader2 size={32} className="animate-spin text-muted-foreground" />
+          <Loader2 size={32} className="animate-spin text-muted-foreground" />
         </div>
       </div>
     );
@@ -248,7 +243,7 @@ export function ProjectWorkspace() {
           onClick={() => navigate("/")}
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
-          <IconArrowLeft size={18} stroke={1.5} />
+          <ArrowLeft size={18} strokeWidth={1.5} />
         </button>
         <h2 className="font-semibold text-sm">{projectName}</h2>
         {activeName && (
@@ -261,10 +256,10 @@ export function ProjectWorkspace() {
           onClick={() => setSettingsOpen(true)}
           className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
         >
-          <IconSettings size={16} stroke={1.5} />
+          <Settings size={16} strokeWidth={1.5} />
         </button>
         <Button size="sm" onClick={() => setCreateOpen(true)}>
-          <IconPlus size={16} className="mr-1.5" stroke={2} />
+          <Plus size={16} className="mr-1.5" strokeWidth={2} />
           Create Milestone
         </Button>
       </div>
@@ -331,7 +326,7 @@ export function ProjectWorkspace() {
               Cancel
             </Button>
             <Button onClick={handleCreate} disabled={creating || !createMsg.trim()}>
-              {creating && <IconLoader2 size={16} className="mr-2 animate-spin" />}
+              {creating && <Loader2 size={16} className="mr-2 animate-spin" />}
               Save Milestone
             </Button>
           </DialogFooter>

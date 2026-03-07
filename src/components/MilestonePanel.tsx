@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { IconRestore, IconTrash, IconLoader2, IconFile, IconHash, IconGitBranch, IconCalendar } from "@tabler/icons-react";
+import { RotateCcw, Trash2, Loader2, FileText, Hash, GitBranch, Calendar } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -59,10 +59,10 @@ export function MilestonePanel({
           )}
 
           <div className="space-y-3">
-            <DetailRow icon={IconHash} label="Commit Hash" value={milestone.commitHash} mono />
-            <DetailRow icon={IconGitBranch} label="Branch" value={milestone.branch} />
-            <DetailRow icon={IconCalendar} label="Created" value={format(new Date(milestone.createdAt), "PPpp")} />
-            <DetailRow icon={IconFile} label="Patch Size" value={mockPatchSize} />
+            <DetailRow icon={Hash} label="Commit Hash" value={milestone.commitHash} mono />
+            <DetailRow icon={GitBranch} label="Branch" value={milestone.branch} />
+            <DetailRow icon={Calendar} label="Created" value={format(new Date(milestone.createdAt), "PPpp")} />
+            <DetailRow icon={FileText} label="Patch Size" value={mockPatchSize} />
           </div>
 
           <Separator />
@@ -82,14 +82,14 @@ export function MilestonePanel({
 
           <div className="space-y-2 pt-2">
             <Button onClick={onRestore} disabled={restoring || isActive} className="w-full">
-              {restoring ? <IconLoader2 size={16} className="mr-2 animate-spin" /> : <IconRestore size={16} className="mr-2" />}
+              {restoring ? <Loader2 size={16} className="mr-2 animate-spin" /> : <RotateCcw size={16} className="mr-2" />}
               Restore to this state
             </Button>
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" disabled={hasChildren || deleting} className="w-full text-destructive hover:text-destructive">
-                  {deleting ? <IconLoader2 size={16} className="mr-2 animate-spin" /> : <IconTrash size={16} className="mr-2" />}
+                  {deleting ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Trash2 size={16} className="mr-2" />}
                   Delete Milestone
                 </Button>
               </AlertDialogTrigger>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
-import { IconDots, IconTrash, IconFolder, IconClock, IconGitBranch } from "@tabler/icons-react";
+import { MoreHorizontal, Trash2, Folder, Clock, GitBranch } from "lucide-react";
 import { projectList, projectDelete, type ProjectSummary } from "@/lib/api";
 import {
   ContextMenu,
@@ -62,7 +62,7 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] gap-4">
         <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mb-2">
-          <IconFolder size={32} className="text-muted-foreground" stroke={1.5} />
+          <Folder size={32} className="text-muted-foreground" strokeWidth={1.5} />
         </div>
         <h2 className="text-xl font-semibold">No projects yet</h2>
         <p className="text-muted-foreground text-sm max-w-xs text-center">
@@ -101,12 +101,12 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
                 <p className="text-xs text-muted-foreground font-mono truncate mb-3">{project.projectPath}</p>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <IconGitBranch size={14} stroke={1.5} />
+                    <GitBranch size={14} strokeWidth={1.5} />
                     {project.milestoneCount} milestones
                   </span>
                   {project.lastMilestoneAt && (
                     <span className="flex items-center gap-1">
-                      <IconClock size={14} stroke={1.5} />
+                      <Clock size={14} strokeWidth={1.5} />
                       {formatDistanceToNow(new Date(project.lastMilestoneAt), { addSuffix: true })}
                     </span>
                   )}
@@ -118,7 +118,7 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
                 className="text-destructive focus:text-destructive"
                 onClick={() => setDeleteTarget(project)}
               >
-                <IconTrash size={16} className="mr-2" stroke={1.5} />
+                <Trash2 size={16} className="mr-2" strokeWidth={1.5} />
                 Delete Project
               </ContextMenuItem>
             </ContextMenuContent>

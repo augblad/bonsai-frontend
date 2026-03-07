@@ -1,5 +1,5 @@
 import { useTheme } from "@/lib/theme";
-import { IconSun, IconMoon, IconArrowLeft } from "@tabler/icons-react";
+import { Sun, Moon, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -18,7 +18,7 @@ export function SettingsPage() {
         onClick={() => navigate("/")}
         className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
       >
-        <IconArrowLeft size={16} stroke={1.5} />
+        <ArrowLeft size={16} strokeWidth={1.5} />
         Back
       </button>
       <h1 className="text-2xl font-semibold mb-6">Settings</h1>
@@ -34,7 +34,7 @@ export function SettingsPage() {
             onClick={toggle}
             className="w-9 h-9 flex items-center justify-center rounded-lg bg-accent text-foreground hover:bg-accent/80 transition-colors"
           >
-            {theme === "dark" ? <IconSun size={18} stroke={1.5} /> : <IconMoon size={18} stroke={1.5} />}
+            {theme === "dark" ? <Sun size={18} strokeWidth={1.5} /> : <Moon size={18} strokeWidth={1.5} />}
           </button>
         </div>
 
