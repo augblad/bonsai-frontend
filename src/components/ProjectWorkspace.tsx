@@ -68,6 +68,7 @@ function ProjectWorkspaceInner() {
   const { projectPath } = useParams<{ projectPath: string }>();
   const decodedPath = decodeURIComponent(projectPath || "");
   const navigate = useNavigate();
+  const { fitView, getNodes } = useReactFlow();
 
   const [treeData, setTreeData] = useState<ProjectTreeResponse | null>(null);
   const [loading, setLoading] = useState(true);
