@@ -66,7 +66,7 @@ let mockProjects: ProjectSummary[] = [
   },
 ];
 
-const mockTreeResponse: ProjectTreeResponse = {
+let mockTreeResponse: ProjectTreeResponse = {
   tree: [
     {
       milestoneId: "ms-1",
@@ -141,6 +141,12 @@ const mockTreeResponse: ProjectTreeResponse = {
   ],
   activeMilestoneId: "ms-7",
 };
+
+function removeNodeFromTree(nodes: TreeNode[], id: string): TreeNode[] {
+  return nodes
+    .filter((n) => n.milestoneId !== id)
+    .map((n) => ({ ...n, children: removeNodeFromTree(n.children, id) }));
+}
 
 let nextId = 4;
 
