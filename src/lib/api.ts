@@ -161,9 +161,12 @@ function addChildToNode(nodes: TreeNode[], parentId: string, child: TreeNode): T
 
 // ── API ────────────────────────────────────────────────────
 
-export async function projectCreate(projectPath: string, name: string): Promise<{ id: string; status: "success" | "error" }> {
+export async function projectCreate(projectPath: string, name: string): Promise<{ id: string; status: "success" | "error"; error?: string }> {
   if (eApi) return eApi.projectCreate(projectPath, name);
   await delay();
+  if (mockProjects.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
+    return { id: "", status: "error", error: "duplicate_name" };
+  }
   const id = `proj-${nextMockId++}`;
   mockProjects.push({ id, name, projectPath, createdAt: new Date().toISOString(), lastMilestoneAt: null, milestoneCount: 0 });
   return { id, status: "success" };
@@ -194,9 +197,12 @@ export async function milestoneCreateInitial(projectPath: string, targetPath: st
   return { milestoneId: `ms-new-${Date.now()}` };
 }
 
-export async function milestoneCreate(_projectPath: string, _message: string): Promise<{ milestoneId: string }> {
+export async function milestoneCreate(_projectPath: string, _message: string): Promise<{ milestoneId: string; error?: string }> {
   if (eApi) return eApi.milestoneCreate(_projectPath, _message);
   await delay(2000);
+  if (mockTreeResponse.milestones.some((m) => m.message.toLowerCase() === _message.toLowerCase())) {
+    return { milestoneId: "", error: "duplicate_name" };
+  }
   const newId = `ms-${nextMockId++}`;
   const activeId = mockTreeResponse.activeMilestoneId;
   const activeMilestone = mockTreeResponse.milestones.find((m) => m.milestoneId === activeId);
