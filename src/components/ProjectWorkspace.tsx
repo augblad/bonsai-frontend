@@ -162,10 +162,10 @@ function ProjectWorkspaceInner() {
 
   // Save positions on drag
   const onNodeDragStop = useCallback(
-    (_event: React.MouseEvent, _node: Node, allNodes: Node[]) => {
-      savePositions(decodedPath, allNodes);
+    () => {
+      savePositions(decodedPath, getNodes());
     },
-    [decodedPath]
+    [decodedPath, getNodes]
   );
 
   // Reset layout
