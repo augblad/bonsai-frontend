@@ -163,8 +163,11 @@ function addChildToNode(nodes: TreeNode[], parentId: string, child: TreeNode): T
 
 export async function projectCreate(projectPath: string, name: string): Promise<{ id: string; status: "success" | "error"; error?: string }> {
   if (eApi) {
-    milestoneCreateInitial(projectPath, "Initial milestone").catch(() => {});
-    return eApi.projectCreate(projectPath, name);
+    const res = await eApi.projectCreate(projectPath, name);
+    if (res.status === "success") {
+      await milestoneCreateInitial(projectPath, "Initial milestone").catch(() => {});
+    }
+    return res;
   }
   await delay();
   if (mockProjects.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
