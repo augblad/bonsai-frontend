@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { IconHome, IconPlus, IconSettings } from "@tabler/icons-react";
+import { Home, Plus, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navItems = [
-  { icon: IconHome, label: "Dashboard", path: "/" },
+  { icon: Home, label: "Dashboard", path: "/" },
 ];
 
 export function AppSidebar({ onNewProject }: { onNewProject: () => void }) {
@@ -32,7 +32,7 @@ export function AppSidebar({ onNewProject }: { onNewProject: () => void }) {
                   : "text-muted-foreground hover:bg-accent hover:text-foreground"
               )}
             >
-              <item.icon size={20} stroke={1.5} />
+              <item.icon size={20} strokeWidth={1.5} />
             </button>
           </TooltipTrigger>
           <TooltipContent side="right">{item.label}</TooltipContent>
@@ -46,7 +46,7 @@ export function AppSidebar({ onNewProject }: { onNewProject: () => void }) {
             onClick={onNewProject}
             className="w-9 h-9 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
           >
-            <IconPlus size={20} stroke={1.5} />
+            <Plus size={20} strokeWidth={1.5} />
           </button>
         </TooltipTrigger>
         <TooltipContent side="right">New Project</TooltipContent>
@@ -66,7 +66,7 @@ export function AppSidebar({ onNewProject }: { onNewProject: () => void }) {
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
             )}
           >
-            <IconSettings size={20} stroke={1.5} />
+            <Settings size={20} strokeWidth={1.5} />
           </button>
         </TooltipTrigger>
         <TooltipContent side="right">Settings</TooltipContent>
