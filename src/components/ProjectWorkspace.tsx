@@ -311,6 +311,7 @@ export function ProjectWorkspace() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onNodeClick={onNodeClick}
+          onNodeDragStop={onNodeDragStop}
           nodeTypes={nodeTypes}
           deleteKeyCode={null}
           fitView
