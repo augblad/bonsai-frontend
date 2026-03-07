@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navItems = [
-  { icon: IconHome, label: "Dashboard", path: "/" },
+  { icon: Home, label: "Dashboard", path: "/" },
 ];
 
 export function AppSidebar({ onNewProject }: { onNewProject: () => void }) {
