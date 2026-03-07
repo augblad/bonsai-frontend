@@ -106,7 +106,7 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
                   </span>
                   {project.lastMilestoneAt && (
                     <span className="flex items-center gap-1">
-                      <IconClock size={14} stroke={1.5} />
+                      <Clock size={14} strokeWidth={1.5} />
                       {formatDistanceToNow(new Date(project.lastMilestoneAt), { addSuffix: true })}
                     </span>
                   )}
