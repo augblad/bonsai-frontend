@@ -40,6 +40,28 @@ import { toast } from "sonner";
 
 const nodeTypes = { milestone: MilestoneNode };
 
+function getStorageKey(projectPath: string) {
+  return `bonsai-positions-${projectPath}`;
+}
+
+function savePositions(projectPath: string, nodes: Node[]) {
+  const positions: Record<string, { x: number; y: number }> = {};
+  nodes.forEach((n) => {
+    positions[n.id] = n.position;
+  });
+  localStorage.setItem(getStorageKey(projectPath), JSON.stringify(positions));
+}
+
+function loadPositions(projectPath: string): Record<string, { x: number; y: number }> | null {
+  const raw = localStorage.getItem(getStorageKey(projectPath));
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 export function ProjectWorkspace() {
   const { projectPath } = useParams<{ projectPath: string }>();
   const decodedPath = decodeURIComponent(projectPath || "");
