@@ -116,6 +116,7 @@ export function ProjectWorkspace() {
           createdAt: node.createdAt,
           isActive: node.milestoneId === treeData.activeMilestoneId,
           hasChildren: node.children.length > 0,
+          hasParent: !!parentId,
         },
       });
 
