@@ -18,7 +18,7 @@ function MilestoneNodeComponent({ data, selected }: NodeProps) {
 
   return (
     <>
-      <Handle type="target" position={Position.Left} className="!w-2 !h-2 !bg-muted-foreground !border-none" />
+      <Handle type="target" position={Position.Left} className="!w-2 !h-2 !bg-muted-foreground !border-none" isConnectable={false} />
       <div
         className={cn(
           "px-4 py-3 rounded-xl border bg-node-bg border-node-border min-w-[180px] max-w-[240px] transition-all cursor-pointer select-none",
