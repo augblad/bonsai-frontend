@@ -379,3 +379,11 @@ function ProjectWorkspaceInner() {
     </div>
   );
 }
+
+export function ProjectWorkspace() {
+  return (
+    <ReactFlowProvider>
+      <ProjectWorkspaceInner />
+    </ReactFlowProvider>
+  );
+}
