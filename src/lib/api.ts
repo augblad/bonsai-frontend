@@ -200,5 +200,11 @@ export async function milestoneRestore(_projectPath: string, _milestoneId: strin
 export async function milestoneDelete(_projectPath: string, _milestoneId: string): Promise<{ status: "success" | "error" }> {
   if (eApi) return eApi.milestoneDelete(_projectPath, _milestoneId);
   await delay(800);
+  mockTreeResponse = {
+    ...mockTreeResponse,
+    tree: removeNodeFromTree(mockTreeResponse.tree, _milestoneId),
+    milestones: mockTreeResponse.milestones.filter((m) => m.milestoneId !== _milestoneId),
+    activeMilestoneId: mockTreeResponse.activeMilestoneId === _milestoneId ? null : mockTreeResponse.activeMilestoneId,
+  };
   return { status: "success" };
 }
