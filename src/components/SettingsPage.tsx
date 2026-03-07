@@ -18,7 +18,7 @@ export function SettingsPage() {
         onClick={() => navigate("/")}
         className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
       >
-        <IconArrowLeft size={16} stroke={1.5} />
+        <ArrowLeft size={16} strokeWidth={1.5} />
         Back
       </button>
       <h1 className="text-2xl font-semibold mb-6">Settings</h1>
