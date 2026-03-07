@@ -29,11 +29,6 @@ function MilestoneNodeComponent({ data, selected }: NodeProps) {
         )}
       >
         <p className="text-sm font-medium truncate">{d.message}</p>
-        <div className="flex items-center gap-2 mt-1.5">
-          <span className="text-[10px] text-muted-foreground">
-            {d.branch}
-          </span>
-        </div>
         <p className="text-[10px] text-muted-foreground mt-1">
           {format(new Date(d.createdAt), "MMM d, yyyy · h:mm a")}
         </p>
