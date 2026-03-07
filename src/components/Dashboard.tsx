@@ -101,7 +101,7 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
                 <p className="text-xs text-muted-foreground font-mono truncate mb-3">{project.projectPath}</p>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <IconGitBranch size={14} stroke={1.5} />
+                    <GitBranch size={14} strokeWidth={1.5} />
                     {project.milestoneCount} milestones
                   </span>
                   {project.lastMilestoneAt && (
