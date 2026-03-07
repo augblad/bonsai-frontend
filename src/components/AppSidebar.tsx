@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Home, Plus, Settings } from "lucide-react";
+import { IconPlant } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -18,7 +19,7 @@ export function AppSidebar({ onNewProject }: { onNewProject: () => void }) {
       <div className="w-full h-2 shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties} />
       {/* Logo */}
       <div className="mb-4 flex items-center justify-center w-9 h-9 rounded-lg bg-primary text-primary-foreground font-bold text-sm select-none">
-        B
+        <IconPlant size={22} strokeWidth={1.5} />
       </div>
 
       {/* Nav */}
