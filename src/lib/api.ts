@@ -164,7 +164,7 @@ function addChildToNode(nodes: TreeNode[], parentId: string, child: TreeNode): T
 export async function projectCreate(projectPath: string, name: string): Promise<{ id: string; status: "success" | "error" }> {
   if (eApi) return eApi.projectCreate(projectPath, name);
   await delay();
-  const id = `proj-${nextId++}`;
+  const id = `proj-${nextMockId++}`;
   mockProjects.push({ id, name, projectPath, createdAt: new Date().toISOString(), lastMilestoneAt: null, milestoneCount: 0 });
   return { id, status: "success" };
 }
