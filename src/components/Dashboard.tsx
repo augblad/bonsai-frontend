@@ -62,7 +62,7 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] gap-4">
         <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mb-2">
-          <IconFolder size={32} className="text-muted-foreground" stroke={1.5} />
+          <Folder size={32} className="text-muted-foreground" strokeWidth={1.5} />
         </div>
         <h2 className="text-xl font-semibold">No projects yet</h2>
         <p className="text-muted-foreground text-sm max-w-xs text-center">
