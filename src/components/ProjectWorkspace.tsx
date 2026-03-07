@@ -171,11 +171,15 @@ export function ProjectWorkspace() {
     if (!createMsg.trim()) return;
     setCreating(true);
     try {
-      await milestoneCreate(decodedPath, createMsg);
-      toast.success("Milestone created");
-      setCreateMsg("");
-      setCreateOpen(false);
-      loadTree();
+      const res = await milestoneCreate(decodedPath, createMsg);
+      if (res.error === "duplicate_name") {
+        toast.error("A milestone with this name already exists in this project");
+      } else {
+        toast.success("Milestone created");
+        setCreateMsg("");
+        setCreateOpen(false);
+        loadTree();
+      }
     } catch {
       toast.error("Failed to create milestone");
     } finally {

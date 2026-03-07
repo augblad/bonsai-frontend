@@ -39,7 +39,7 @@ export function CreateProjectModal({ open, onOpenChange, onCreated }: Props) {
     try {
       const res = await projectCreate(path, name);
       if (res.status === "error") {
-        setError("Failed to create project. Please try again.");
+        setError(res.error === "duplicate_name" ? "A project with this name already exists." : "Failed to create project. Please try again.");
       } else {
         toast.success(`Project "${name}" created`);
         setName("");
