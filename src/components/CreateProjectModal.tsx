@@ -23,6 +23,7 @@ interface Props {
 }
 
 export function CreateProjectModal({ open, onOpenChange, onCreated }: Props) {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [path, setPath] = useState("");
   const [binaryOpt, setBinaryOpt] = useState(true);
