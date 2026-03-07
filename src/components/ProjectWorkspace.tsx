@@ -259,7 +259,7 @@ export function ProjectWorkspace() {
           <Settings size={16} strokeWidth={1.5} />
         </button>
         <Button size="sm" onClick={() => setCreateOpen(true)}>
-          <IconPlus size={16} className="mr-1.5" stroke={2} />
+          <Plus size={16} className="mr-1.5" strokeWidth={2} />
           Create Milestone
         </Button>
       </div>
