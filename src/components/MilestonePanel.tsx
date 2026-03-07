@@ -82,7 +82,7 @@ export function MilestonePanel({
 
           <div className="space-y-2 pt-2">
             <Button onClick={onRestore} disabled={restoring || isActive} className="w-full">
-              {restoring ? <IconLoader2 size={16} className="mr-2 animate-spin" /> : <IconRestore size={16} className="mr-2" />}
+              {restoring ? <Loader2 size={16} className="mr-2 animate-spin" /> : <RotateCcw size={16} className="mr-2" />}
               Restore to this state
             </Button>
 
