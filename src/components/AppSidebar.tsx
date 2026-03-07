@@ -66,7 +66,7 @@ export function AppSidebar({ onNewProject }: { onNewProject: () => void }) {
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
             )}
           >
-            <IconSettings size={20} stroke={1.5} />
+            <Settings size={20} strokeWidth={1.5} />
           </button>
         </TooltipTrigger>
         <TooltipContent side="right">Settings</TooltipContent>
