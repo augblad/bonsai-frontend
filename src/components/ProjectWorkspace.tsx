@@ -86,7 +86,16 @@ function ProjectWorkspaceInner() {
   const [restoring, setRestoring] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const projectName = decodedPath.split("/").pop() || "Project";
+  const [projectName, setProjectName] = useState("Project");
+
+  // Fetch actual project name from project list
+  useEffect(() => {
+    projectList().then((projects) => {
+      const match = projects.find((p) => p.projectPath === decodedPath);
+      if (match) setProjectName(match.name);
+      else setProjectName(decodedPath.split("/").pop() || "Project");
+    });
+  }, [decodedPath]);
 
   const loadTree = useCallback(async () => {
     setLoading(true);
