@@ -148,14 +148,23 @@ function removeNodeFromTree(nodes: TreeNode[], id: string): TreeNode[] {
     .map((n) => ({ ...n, children: removeNodeFromTree(n.children, id) }));
 }
 
-let nextId = 4;
+let nextMockId = 8;
+
+function addChildToNode(nodes: TreeNode[], parentId: string, child: TreeNode): TreeNode[] {
+  return nodes.map((n) => {
+    if (n.milestoneId === parentId) {
+      return { ...n, children: [...n.children, child] };
+    }
+    return { ...n, children: addChildToNode(n.children, parentId, child) };
+  });
+}
 
 // ── API ────────────────────────────────────────────────────
 
 export async function projectCreate(projectPath: string, name: string): Promise<{ id: string; status: "success" | "error" }> {
   if (eApi) return eApi.projectCreate(projectPath, name);
   await delay();
-  const id = `proj-${nextId++}`;
+  const id = `proj-${nextMockId++}`;
   mockProjects.push({ id, name, projectPath, createdAt: new Date().toISOString(), lastMilestoneAt: null, milestoneCount: 0 });
   return { id, status: "success" };
 }
@@ -188,12 +197,39 @@ export async function milestoneCreateInitial(projectPath: string, targetPath: st
 export async function milestoneCreate(_projectPath: string, _message: string): Promise<{ milestoneId: string }> {
   if (eApi) return eApi.milestoneCreate(_projectPath, _message);
   await delay(2000);
-  return { milestoneId: `ms-new-${Date.now()}` };
+  const newId = `ms-${nextMockId++}`;
+  const activeId = mockTreeResponse.activeMilestoneId;
+  const activeMilestone = mockTreeResponse.milestones.find((m) => m.milestoneId === activeId);
+  const newNode: TreeNode = {
+    milestoneId: newId,
+    message: _message,
+    commitHash: Math.random().toString(36).substring(2, 9),
+    branch: activeMilestone?.branch || "main",
+    createdAt: new Date().toISOString(),
+    children: [],
+  };
+  const newRecord: MilestoneRecord = {
+    milestoneId: newId,
+    message: _message,
+    commitHash: newNode.commitHash,
+    branch: newNode.branch,
+    parentMilestoneId: activeId,
+    patchFiles: ["changes.patch"],
+    createdAt: newNode.createdAt,
+  };
+  mockTreeResponse = {
+    ...mockTreeResponse,
+    tree: activeId ? addChildToNode(mockTreeResponse.tree, activeId, newNode) : [...mockTreeResponse.tree, newNode],
+    milestones: [...mockTreeResponse.milestones, newRecord],
+    activeMilestoneId: newId,
+  };
+  return { milestoneId: newId };
 }
 
 export async function milestoneRestore(_projectPath: string, _milestoneId: string): Promise<{ status: "success" | "error" }> {
   if (eApi) return eApi.milestoneRestore(_projectPath, _milestoneId);
   await delay();
+  mockTreeResponse = { ...mockTreeResponse, activeMilestoneId: _milestoneId };
   return { status: "success" };
 }
 
