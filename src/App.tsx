@@ -1,27 +1,63 @@
+import { useState, useCallback } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import { ThemeProvider } from "@/lib/theme";
+import { AppSidebar } from "@/components/AppSidebar";
+import { Dashboard } from "@/components/Dashboard";
+import { ProjectWorkspace } from "@/components/ProjectWorkspace";
+import { SettingsPage } from "@/components/SettingsPage";
+import { CreateProjectModal } from "@/components/CreateProjectModal";
+import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const [createOpen, setCreateOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleCreated = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+  }, []);
+
+  return (
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <div className="flex min-h-screen w-full bg-background">
+              <AppSidebar onNewProject={() => setCreateOpen(true)} />
+              <main className="flex-1 flex flex-col min-h-0">
+                <Routes>
+                  <Route
+                    path="/"
+                    element={
+                      <Dashboard
+                        key={refreshKey}
+                        onNewProject={() => setCreateOpen(true)}
+                      />
+                    }
+                  />
+                  <Route path="/project/:projectPath" element={<ProjectWorkspace />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
+            </div>
+            <CreateProjectModal
+              open={createOpen}
+              onOpenChange={setCreateOpen}
+              onCreated={handleCreated}
+            />
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  );
+};
 
 export default App;
