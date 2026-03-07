@@ -243,7 +243,7 @@ export function ProjectWorkspace() {
           onClick={() => navigate("/")}
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
-          <IconArrowLeft size={18} stroke={1.5} />
+          <ArrowLeft size={18} strokeWidth={1.5} />
         </button>
         <h2 className="font-semibold text-sm">{projectName}</h2>
         {activeName && (
