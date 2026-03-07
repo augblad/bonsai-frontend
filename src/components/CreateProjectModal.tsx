@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
+import { Info, Loader2 } from "lucide-react";
 import { projectCreate } from "@/lib/api";
 import { toast } from "sonner";
 

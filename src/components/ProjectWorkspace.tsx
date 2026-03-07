@@ -12,12 +12,7 @@ import {
   type NodeMouseHandler,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import {
-  IconArrowLeft,
-  IconPlus,
-  IconSettings,
-  IconLoader2,
-} from "@tabler/icons-react";
+import { ArrowLeft, Plus, Settings, Loader2 } from "lucide-react";
 import {
   projectTree,
   milestoneCreate,

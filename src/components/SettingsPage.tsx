@@ -1,5 +1,5 @@
 import { useTheme } from "@/lib/theme";
-import { IconSun, IconMoon, IconArrowLeft } from "@tabler/icons-react";
+import { Sun, Moon, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";

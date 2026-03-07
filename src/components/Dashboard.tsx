@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
-import { IconDots, IconTrash, IconFolder, IconClock, IconGitBranch } from "@tabler/icons-react";
+import { MoreHorizontal, Trash2, Folder, Clock, GitBranch } from "lucide-react";
 import { projectList, projectDelete, type ProjectSummary } from "@/lib/api";
 import {
   ContextMenu,

@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { IconRestore, IconTrash, IconLoader2, IconFile, IconHash, IconGitBranch, IconCalendar } from "@tabler/icons-react";
+import { RotateCcw, Trash2, Loader2, FileText, Hash, GitBranch, Calendar } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
