@@ -197,12 +197,39 @@ export async function milestoneCreateInitial(projectPath: string, targetPath: st
 export async function milestoneCreate(_projectPath: string, _message: string): Promise<{ milestoneId: string }> {
   if (eApi) return eApi.milestoneCreate(_projectPath, _message);
   await delay(2000);
-  return { milestoneId: `ms-new-${Date.now()}` };
+  const newId = `ms-${nextMockId++}`;
+  const activeId = mockTreeResponse.activeMilestoneId;
+  const activeMilestone = mockTreeResponse.milestones.find((m) => m.milestoneId === activeId);
+  const newNode: TreeNode = {
+    milestoneId: newId,
+    message: _message,
+    commitHash: Math.random().toString(36).substring(2, 9),
+    branch: activeMilestone?.branch || "main",
+    createdAt: new Date().toISOString(),
+    children: [],
+  };
+  const newRecord: MilestoneRecord = {
+    milestoneId: newId,
+    message: _message,
+    commitHash: newNode.commitHash,
+    branch: newNode.branch,
+    parentMilestoneId: activeId,
+    patchFiles: ["changes.patch"],
+    createdAt: newNode.createdAt,
+  };
+  mockTreeResponse = {
+    ...mockTreeResponse,
+    tree: activeId ? addChildToNode(mockTreeResponse.tree, activeId, newNode) : [...mockTreeResponse.tree, newNode],
+    milestones: [...mockTreeResponse.milestones, newRecord],
+    activeMilestoneId: newId,
+  };
+  return { milestoneId: newId };
 }
 
 export async function milestoneRestore(_projectPath: string, _milestoneId: string): Promise<{ status: "success" | "error" }> {
   if (eApi) return eApi.milestoneRestore(_projectPath, _milestoneId);
   await delay();
+  mockTreeResponse = { ...mockTreeResponse, activeMilestoneId: _milestoneId };
   return { status: "success" };
 }
 
