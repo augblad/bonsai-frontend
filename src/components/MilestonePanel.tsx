@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { format } from "date-fns";
-import { RotateCcw, Trash2, Loader2, FileText, Hash, GitBranch, Calendar } from "lucide-react";
+import { RotateCcw, Trash2, Loader2, FileText, Hash, GitBranch, Calendar, MoreHorizontal, ChevronDown, ChevronUp } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -40,81 +41,95 @@ export function MilestonePanel({
   restoring,
   deleting,
 }: Props) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
   if (!milestone) return null;
 
   const mockPatchSize = `${(milestone.patchFiles.length * 15 + 3).toFixed(0)} MB`;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[380px] sm:w-[420px] bg-panel border-l border-border">
+      <SheetContent className="w-[380px] sm:w-[420px] bg-panel border-l border-border flex flex-col">
         <SheetHeader>
           <SheetTitle className="text-lg">{milestone.message}</SheetTitle>
         </SheetHeader>
 
-        <div className="mt-6 space-y-4">
+        <div className="mt-6 flex-1 overflow-y-auto space-y-4">
           {isActive && (
             <Badge variant="outline" className="border-primary text-primary text-xs">
               Active Milestone
             </Badge>
           )}
 
-          <div className="space-y-3">
-            <DetailRow icon={Hash} label="Commit Hash" value={milestone.commitHash} mono />
-            <DetailRow icon={GitBranch} label="Branch" value={milestone.branch} />
-            <DetailRow icon={Calendar} label="Created" value={format(new Date(milestone.createdAt), "PPpp")} />
-            <DetailRow icon={FileText} label="Patch Size" value={mockPatchSize} />
-          </div>
+          <DetailRow icon={Calendar} label="Created" value={format(new Date(milestone.createdAt), "PPpp")} />
 
-          <Separator />
+          <button
+            onClick={() => setDetailsOpen(!detailsOpen)}
+            className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
+          >
+            <MoreHorizontal size={14} />
+            <span>Details</span>
+            {detailsOpen ? <ChevronUp size={12} className="ml-auto" /> : <ChevronDown size={12} className="ml-auto" />}
+          </button>
 
-          <div>
-            <p className="text-xs text-muted-foreground font-medium mb-2">Patch Files</p>
-            <div className="space-y-1">
-              {milestone.patchFiles.map((f) => (
-                <div key={f} className="text-xs font-mono text-muted-foreground bg-accent rounded px-2 py-1">
-                  {f}
+          {detailsOpen && (
+            <div className="space-y-3 pl-1 animate-in fade-in-0 slide-in-from-top-1">
+              <DetailRow icon={Hash} label="Commit Hash" value={milestone.commitHash} mono />
+              <DetailRow icon={GitBranch} label="Branch" value={milestone.branch} />
+              <DetailRow icon={FileText} label="Patch Size" value={mockPatchSize} />
+
+              <Separator />
+
+              <div>
+                <p className="text-xs text-muted-foreground font-medium mb-2">Patch Files</p>
+                <div className="space-y-1">
+                  {milestone.patchFiles.map((f) => (
+                    <div key={f} className="text-xs font-mono text-muted-foreground bg-accent rounded px-2 py-1">
+                      {f}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
+          )}
+        </div>
 
-          <Separator />
+        <Separator />
 
-          <div className="space-y-2 pt-2">
-            <Button onClick={onRestore} disabled={restoring || isActive} className="w-full">
-              {restoring ? <Loader2 size={16} className="mr-2 animate-spin" /> : <RotateCcw size={16} className="mr-2" />}
-              Restore to this state
-            </Button>
+        <div className="space-y-2 pt-3 pb-2">
+          <Button onClick={onRestore} disabled={restoring || isActive} className="w-full">
+            {restoring ? <Loader2 size={16} className="mr-2 animate-spin" /> : <RotateCcw size={16} className="mr-2" />}
+            Restore to this state
+          </Button>
 
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" disabled={hasChildren || deleting} className="w-full text-destructive hover:text-destructive">
-                  {deleting ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Trash2 size={16} className="mr-2" />}
-                  Delete Milestone
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete this milestone?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently remove "{milestone.message}" and its saved data. This cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" disabled={hasChildren || deleting} className="w-full text-destructive hover:text-destructive">
+                {deleting ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Trash2 size={16} className="mr-2" />}
+                Delete Milestone
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this milestone?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently remove "{milestone.message}" and its saved data. This cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
-            {hasChildren && (
-              <p className="text-xs text-muted-foreground text-center">
-                Cannot delete — this milestone has children.
-              </p>
-            )}
-          </div>
+          {hasChildren && (
+            <p className="text-xs text-muted-foreground text-center">
+              Cannot delete — this milestone has children.
+            </p>
+          )}
         </div>
       </SheetContent>
     </Sheet>
