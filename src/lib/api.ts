@@ -161,9 +161,12 @@ function addChildToNode(nodes: TreeNode[], parentId: string, child: TreeNode): T
 
 // ── API ────────────────────────────────────────────────────
 
-export async function projectCreate(projectPath: string, name: string): Promise<{ id: string; status: "success" | "error" }> {
+export async function projectCreate(projectPath: string, name: string): Promise<{ id: string; status: "success" | "error"; error?: string }> {
   if (eApi) return eApi.projectCreate(projectPath, name);
   await delay();
+  if (mockProjects.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
+    return { id: "", status: "error", error: "duplicate_name" };
+  }
   const id = `proj-${nextMockId++}`;
   mockProjects.push({ id, name, projectPath, createdAt: new Date().toISOString(), lastMilestoneAt: null, milestoneCount: 0 });
   return { id, status: "success" };
