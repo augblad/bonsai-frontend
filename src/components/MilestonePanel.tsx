@@ -59,10 +59,10 @@ export function MilestonePanel({
           )}
 
           <div className="space-y-3">
-            <DetailRow icon={IconHash} label="Commit Hash" value={milestone.commitHash} mono />
-            <DetailRow icon={IconGitBranch} label="Branch" value={milestone.branch} />
-            <DetailRow icon={IconCalendar} label="Created" value={format(new Date(milestone.createdAt), "PPpp")} />
-            <DetailRow icon={IconFile} label="Patch Size" value={mockPatchSize} />
+            <DetailRow icon={Hash} label="Commit Hash" value={milestone.commitHash} mono />
+            <DetailRow icon={GitBranch} label="Branch" value={milestone.branch} />
+            <DetailRow icon={Calendar} label="Created" value={format(new Date(milestone.createdAt), "PPpp")} />
+            <DetailRow icon={FileText} label="Patch Size" value={mockPatchSize} />
           </div>
 
           <Separator />
