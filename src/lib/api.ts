@@ -191,8 +191,8 @@ export async function projectTree(_projectPath: string): Promise<ProjectTreeResp
   return JSON.parse(JSON.stringify(mockTreeResponse));
 }
 
-export async function milestoneCreateInitial(projectPath: string, targetPath: string, message: string): Promise<{ milestoneId: string }> {
-  if (eApi) return eApi.milestoneCreateInitial(projectPath, targetPath, message);
+export async function milestoneCreateInitial(projectPath: string, message: string): Promise<{ milestoneId: string }> {
+  if (eApi) return eApi.milestoneCreateInitial(projectPath, message);
   await delay();
   return { milestoneId: `ms-new-${Date.now()}` };
 }
