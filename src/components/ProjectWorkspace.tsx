@@ -238,6 +238,8 @@ function ProjectWorkspaceInner() {
       const res = await milestoneRestore(decodedPath, selectedMilestone.milestoneId);
       if (res.status === "success") {
         toast.success("Restored successfully");
+        setPanelOpen(false);
+        setSelectedMilestone(null);
         loadTree();
       } else {
         toast.error("Restore failed");
