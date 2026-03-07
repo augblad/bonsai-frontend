@@ -96,42 +96,32 @@ export function ProjectWorkspace() {
     loadTree();
   }, [loadTree]);
 
-  // Convert tree to React Flow nodes/edges
-  useEffect(() => {
-    if (!treeData) return;
-
+  // Build default layout from tree
+  const buildLayout = useCallback((data: ProjectTreeResponse, useSaved: boolean) => {
     const newNodes: Node[] = [];
     const newEdges: Edge[] = [];
     const Y_GAP = 100;
     const X_GAP = 300;
 
-    // Find children count for each node
-    const childrenMap = new Map<string, number>();
-    const buildChildrenMap = (nodes: TreeNode[]) => {
-      nodes.forEach((n) => {
-        childrenMap.set(n.milestoneId, n.children.length);
-        buildChildrenMap(n.children);
-      });
-    };
-    buildChildrenMap(treeData.tree);
+    const saved = useSaved ? loadPositions(decodedPath) : null;
 
     let yCounter = 0;
 
     const traverse = (node: TreeNode, depth: number, parentId?: string) => {
-      const y = yCounter * Y_GAP;
-      const x = depth * X_GAP;
+      const defaultPos = { x: depth * X_GAP, y: yCounter * Y_GAP };
+      const position = saved?.[node.milestoneId] ?? defaultPos;
 
       newNodes.push({
         id: node.milestoneId,
         type: "milestone",
-        position: { x, y },
+        position,
         data: {
           label: node.message,
           message: node.message,
           commitHash: node.commitHash,
           branch: node.branch,
           createdAt: node.createdAt,
-          isActive: node.milestoneId === treeData.activeMilestoneId,
+          isActive: node.milestoneId === data.activeMilestoneId,
           hasChildren: node.children.length > 0,
           hasParent: !!parentId,
         },
@@ -144,23 +134,46 @@ export function ProjectWorkspace() {
           target: node.milestoneId,
           type: "smoothstep",
           style: { stroke: "hsl(var(--edge-color))", strokeWidth: 2 },
-          animated: node.milestoneId === treeData.activeMilestoneId,
+          animated: node.milestoneId === data.activeMilestoneId,
         });
       }
 
       if (node.children.length === 0) {
         yCounter++;
       } else {
-        node.children.forEach((child) => {
-          traverse(child, depth + 1, node.milestoneId);
-        });
+        node.children.forEach((child) => traverse(child, depth + 1, node.milestoneId));
       }
     };
 
-    treeData.tree.forEach((root) => traverse(root, 0));
+    data.tree.forEach((root) => traverse(root, 0));
+    return { newNodes, newEdges };
+  }, [decodedPath]);
+
+  // Convert tree to React Flow nodes/edges
+  useEffect(() => {
+    if (!treeData) return;
+    const { newNodes, newEdges } = buildLayout(treeData, true);
     setNodes(newNodes);
     setEdges(newEdges);
-  }, [treeData, setNodes, setEdges]);
+  }, [treeData, setNodes, setEdges, buildLayout]);
+
+  // Save positions on drag
+  const onNodeDragStop = useCallback(
+    (_event: React.MouseEvent, _node: Node, allNodes: Node[]) => {
+      savePositions(decodedPath, allNodes);
+    },
+    [decodedPath]
+  );
+
+  // Reset layout
+  const handleResetLayout = useCallback(() => {
+    if (!treeData) return;
+    localStorage.removeItem(getStorageKey(decodedPath));
+    const { newNodes, newEdges } = buildLayout(treeData, false);
+    setNodes(newNodes);
+    setEdges(newEdges);
+    toast.success("Layout reset to default");
+  }, [treeData, decodedPath, buildLayout, setNodes, setEdges]);
 
   const onNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
