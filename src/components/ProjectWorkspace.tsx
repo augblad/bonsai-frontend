@@ -12,7 +12,7 @@ import {
   type NodeMouseHandler,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { ArrowLeft, Plus, Settings, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Settings, Loader2, RotateCcw } from "lucide-react";
 import {
   projectTree,
   milestoneCreate,
