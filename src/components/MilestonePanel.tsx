@@ -67,7 +67,6 @@ export function MilestonePanel({
             onClick={() => setDetailsOpen(!detailsOpen)}
             className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
           >
-            <MoreHorizontal size={14} />
             <span>Details</span>
             {detailsOpen ? <ChevronUp size={12} className="ml-auto" /> : <ChevronDown size={12} className="ml-auto" />}
           </button>
