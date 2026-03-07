@@ -175,8 +175,9 @@ function ProjectWorkspaceInner() {
     const { newNodes, newEdges } = buildLayout(treeData, false);
     setNodes(newNodes);
     setEdges(newEdges);
+    setTimeout(() => fitView({ padding: 0.3 }), 50);
     toast.success("Layout reset to default");
-  }, [treeData, decodedPath, buildLayout, setNodes, setEdges]);
+  }, [treeData, decodedPath, buildLayout, setNodes, setEdges, fitView]);
 
   const onNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
