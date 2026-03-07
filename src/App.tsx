@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -28,7 +28,7 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
+          <HashRouter>
             <div className="flex min-h-screen w-full bg-background">
               <AppSidebar onNewProject={() => setCreateOpen(true)} />
               <main className="flex-1 flex flex-col min-h-0">
@@ -53,7 +53,7 @@ const App = () => {
               onOpenChange={setCreateOpen}
               onCreated={handleCreated}
             />
-          </BrowserRouter>
+          </HashRouter>
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>
