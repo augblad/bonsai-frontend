@@ -148,7 +148,16 @@ function removeNodeFromTree(nodes: TreeNode[], id: string): TreeNode[] {
     .map((n) => ({ ...n, children: removeNodeFromTree(n.children, id) }));
 }
 
-let nextId = 4;
+let nextMockId = 8;
+
+function addChildToNode(nodes: TreeNode[], parentId: string, child: TreeNode): TreeNode[] {
+  return nodes.map((n) => {
+    if (n.milestoneId === parentId) {
+      return { ...n, children: [...n.children, child] };
+    }
+    return { ...n, children: addChildToNode(n.children, parentId, child) };
+  });
+}
 
 // ── API ────────────────────────────────────────────────────
 
