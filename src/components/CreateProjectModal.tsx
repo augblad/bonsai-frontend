@@ -85,24 +85,6 @@ export function CreateProjectModal({ open, onOpenChange, onCreated }: Props) {
               </Button>
             </div>
           </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="binary-opt" className="text-sm">Binary Optimization (xdelta3)</Label>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <IconInfoCircle size={14} className="text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs text-xs">
-                  Uses xdelta3 for efficient binary diffing, reducing storage for large binary files like images and compiled assets.
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <Switch id="binary-opt" checked={binaryOpt} onCheckedChange={setBinaryOpt} />
-          </div>
-          <div className="flex items-center justify-between">
-            <Label htmlFor="auto-watch" className="text-sm">Auto-watch for changes</Label>
-            <Switch id="auto-watch" checked={autoWatch} onCheckedChange={setAutoWatch} />
-          </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
         <DialogFooter>

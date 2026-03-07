@@ -29,9 +29,6 @@ function MilestoneNodeComponent({ data, selected }: NodeProps) {
       >
         <p className="text-sm font-medium truncate">{d.message}</p>
         <div className="flex items-center gap-2 mt-1.5">
-          <span className="text-[10px] font-mono text-muted-foreground bg-accent px-1.5 py-0.5 rounded">
-            {d.commitHash}
-          </span>
           <span className="text-[10px] text-muted-foreground">
             {d.branch}
           </span>
