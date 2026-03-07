@@ -98,7 +98,7 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
                   </div>
                 </div>
                 <h3 className="font-medium text-sm mb-1">{project.name}</h3>
-                <p className="text-xs text-muted-foreground font-mono truncate mb-3">{project.projectPath}</p>
+                <p className="text-xs text-muted-foreground font-mono break-all mb-3">{project.projectPath}</p>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <GitBranch size={14} strokeWidth={1.5} />
