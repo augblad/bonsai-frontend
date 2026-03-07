@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function CreateProjectModal({ open, onOpenChange, onCreated }: Props) {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [path, setPath] = useState("");
   const [binaryOpt, setBinaryOpt] = useState(true);
@@ -42,10 +44,12 @@ export function CreateProjectModal({ open, onOpenChange, onCreated }: Props) {
         setError(res.error === "duplicate_name" ? "A project with this name already exists." : "Failed to create project. Please try again.");
       } else {
         toast.success(`Project "${name}" created`);
+        const createdPath = path;
         setName("");
         setPath("");
         onOpenChange(false);
         onCreated();
+        navigate(`/project/${encodeURIComponent(createdPath)}`);
       }
     } catch {
       setError("An unexpected error occurred.");
