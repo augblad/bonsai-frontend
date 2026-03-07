@@ -66,7 +66,7 @@ let mockProjects: ProjectSummary[] = [
   },
 ];
 
-const mockTreeResponse: ProjectTreeResponse = {
+let mockTreeResponse: ProjectTreeResponse = {
   tree: [
     {
       milestoneId: "ms-1",
@@ -142,6 +142,12 @@ const mockTreeResponse: ProjectTreeResponse = {
   activeMilestoneId: "ms-7",
 };
 
+function removeNodeFromTree(nodes: TreeNode[], id: string): TreeNode[] {
+  return nodes
+    .filter((n) => n.milestoneId !== id)
+    .map((n) => ({ ...n, children: removeNodeFromTree(n.children, id) }));
+}
+
 let nextId = 4;
 
 // ── API ────────────────────────────────────────────────────
@@ -194,5 +200,11 @@ export async function milestoneRestore(_projectPath: string, _milestoneId: strin
 export async function milestoneDelete(_projectPath: string, _milestoneId: string): Promise<{ status: "success" | "error" }> {
   if (eApi) return eApi.milestoneDelete(_projectPath, _milestoneId);
   await delay(800);
+  mockTreeResponse = {
+    ...mockTreeResponse,
+    tree: removeNodeFromTree(mockTreeResponse.tree, _milestoneId),
+    milestones: mockTreeResponse.milestones.filter((m) => m.milestoneId !== _milestoneId),
+    activeMilestoneId: mockTreeResponse.activeMilestoneId === _milestoneId ? null : mockTreeResponse.activeMilestoneId,
+  };
   return { status: "success" };
 }
