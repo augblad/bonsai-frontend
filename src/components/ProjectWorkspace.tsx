@@ -64,7 +64,7 @@ function loadPositions(projectPath: string): Record<string, { x: number; y: numb
   }
 }
 
-export function ProjectWorkspace() {
+function ProjectWorkspaceInner() {
   const { projectPath } = useParams<{ projectPath: string }>();
   const decodedPath = decodeURIComponent(projectPath || "");
   const navigate = useNavigate();
