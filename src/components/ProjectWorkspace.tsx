@@ -229,7 +229,7 @@ export function ProjectWorkspace() {
           <Skeleton className="w-32 h-8" />
         </div>
         <div className="flex-1 flex items-center justify-center">
-          <IconLoader2 size={32} className="animate-spin text-muted-foreground" />
+          <Loader2 size={32} className="animate-spin text-muted-foreground" />
         </div>
       </div>
     );
