@@ -11,6 +11,7 @@ interface MilestoneNodeData {
   createdAt: string;
   isActive: boolean;
   hasChildren: boolean;
+  hasParent: boolean;
 }
 
 function MilestoneNodeComponent({ data, selected }: NodeProps) {
