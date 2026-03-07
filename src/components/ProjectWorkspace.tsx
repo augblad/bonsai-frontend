@@ -274,6 +274,7 @@ export function ProjectWorkspace() {
           onEdgesChange={onEdgesChange}
           onNodeClick={onNodeClick}
           nodeTypes={nodeTypes}
+          deleteKeyCode={null}
           fitView
           fitViewOptions={{ padding: 0.3 }}
           minZoom={0.3}
