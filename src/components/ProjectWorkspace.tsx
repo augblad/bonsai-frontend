@@ -326,7 +326,7 @@ export function ProjectWorkspace() {
               Cancel
             </Button>
             <Button onClick={handleCreate} disabled={creating || !createMsg.trim()}>
-              {creating && <IconLoader2 size={16} className="mr-2 animate-spin" />}
+              {creating && <Loader2 size={16} className="mr-2 animate-spin" />}
               Save Milestone
             </Button>
           </DialogFooter>

@@ -118,7 +118,7 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
                 className="text-destructive focus:text-destructive"
                 onClick={() => setDeleteTarget(project)}
               >
-                <IconTrash size={16} className="mr-2" stroke={1.5} />
+                <Trash2 size={16} className="mr-2" strokeWidth={1.5} />
                 Delete Project
               </ContextMenuItem>
             </ContextMenuContent>

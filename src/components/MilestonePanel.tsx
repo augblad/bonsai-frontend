@@ -89,7 +89,7 @@ export function MilestonePanel({
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" disabled={hasChildren || deleting} className="w-full text-destructive hover:text-destructive">
-                  {deleting ? <IconLoader2 size={16} className="mr-2 animate-spin" /> : <IconTrash size={16} className="mr-2" />}
+                  {deleting ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Trash2 size={16} className="mr-2" />}
                   Delete Milestone
                 </Button>
               </AlertDialogTrigger>

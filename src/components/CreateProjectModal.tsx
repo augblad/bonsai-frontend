@@ -90,7 +90,7 @@ export function CreateProjectModal({ open, onOpenChange, onCreated }: Props) {
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading && <IconLoader2 size={16} className="mr-2 animate-spin" />}
+            {loading && <Loader2 size={16} className="mr-2 animate-spin" />}
             Create Project
           </Button>
         </DialogFooter>
