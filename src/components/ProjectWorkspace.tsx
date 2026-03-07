@@ -287,6 +287,10 @@ export function ProjectWorkspace() {
           </span>
         )}
         <div className="flex-1" />
+        <Button variant="ghost" size="sm" onClick={handleResetLayout} className="text-muted-foreground">
+          <RotateCcw size={14} className="mr-1.5" strokeWidth={2} />
+          Reset Layout
+        </Button>
         <button
           onClick={() => setSettingsOpen(true)}
           className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
