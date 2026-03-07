@@ -44,10 +44,12 @@ export function CreateProjectModal({ open, onOpenChange, onCreated }: Props) {
         setError(res.error === "duplicate_name" ? "A project with this name already exists." : "Failed to create project. Please try again.");
       } else {
         toast.success(`Project "${name}" created`);
+        const createdPath = path;
         setName("");
         setPath("");
         onOpenChange(false);
         onCreated();
+        navigate(`/project/${encodeURIComponent(createdPath)}`);
       }
     } catch {
       setError("An unexpected error occurred.");
