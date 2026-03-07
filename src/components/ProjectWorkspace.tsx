@@ -256,7 +256,7 @@ export function ProjectWorkspace() {
           onClick={() => setSettingsOpen(true)}
           className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
         >
-          <IconSettings size={16} stroke={1.5} />
+          <Settings size={16} strokeWidth={1.5} />
         </button>
         <Button size="sm" onClick={() => setCreateOpen(true)}>
           <IconPlus size={16} className="mr-1.5" stroke={2} />
