@@ -2,17 +2,19 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ReactFlow,
+  ReactFlowProvider,
   Background,
   Controls,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   type Node,
   type Edge,
   BackgroundVariant,
   type NodeMouseHandler,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { ArrowLeft, Plus, Settings, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Settings, Loader2, RotateCcw } from "lucide-react";
 import {
   projectTree,
   milestoneCreate,
@@ -40,10 +42,33 @@ import { toast } from "sonner";
 
 const nodeTypes = { milestone: MilestoneNode };
 
-export function ProjectWorkspace() {
+function getStorageKey(projectPath: string) {
+  return `bonsai-positions-${projectPath}`;
+}
+
+function savePositions(projectPath: string, nodes: Node[]) {
+  const positions: Record<string, { x: number; y: number }> = {};
+  nodes.forEach((n) => {
+    positions[n.id] = n.position;
+  });
+  localStorage.setItem(getStorageKey(projectPath), JSON.stringify(positions));
+}
+
+function loadPositions(projectPath: string): Record<string, { x: number; y: number }> | null {
+  const raw = localStorage.getItem(getStorageKey(projectPath));
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function ProjectWorkspaceInner() {
   const { projectPath } = useParams<{ projectPath: string }>();
   const decodedPath = decodeURIComponent(projectPath || "");
   const navigate = useNavigate();
+  const { fitView, getNodes } = useReactFlow();
 
   const [treeData, setTreeData] = useState<ProjectTreeResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,42 +99,32 @@ export function ProjectWorkspace() {
     loadTree();
   }, [loadTree]);
 
-  // Convert tree to React Flow nodes/edges
-  useEffect(() => {
-    if (!treeData) return;
-
+  // Build default layout from tree
+  const buildLayout = useCallback((data: ProjectTreeResponse, useSaved: boolean) => {
     const newNodes: Node[] = [];
     const newEdges: Edge[] = [];
     const Y_GAP = 100;
     const X_GAP = 300;
 
-    // Find children count for each node
-    const childrenMap = new Map<string, number>();
-    const buildChildrenMap = (nodes: TreeNode[]) => {
-      nodes.forEach((n) => {
-        childrenMap.set(n.milestoneId, n.children.length);
-        buildChildrenMap(n.children);
-      });
-    };
-    buildChildrenMap(treeData.tree);
+    const saved = useSaved ? loadPositions(decodedPath) : null;
 
     let yCounter = 0;
 
     const traverse = (node: TreeNode, depth: number, parentId?: string) => {
-      const y = yCounter * Y_GAP;
-      const x = depth * X_GAP;
+      const defaultPos = { x: depth * X_GAP, y: yCounter * Y_GAP };
+      const position = saved?.[node.milestoneId] ?? defaultPos;
 
       newNodes.push({
         id: node.milestoneId,
         type: "milestone",
-        position: { x, y },
+        position,
         data: {
           label: node.message,
           message: node.message,
           commitHash: node.commitHash,
           branch: node.branch,
           createdAt: node.createdAt,
-          isActive: node.milestoneId === treeData.activeMilestoneId,
+          isActive: node.milestoneId === data.activeMilestoneId,
           hasChildren: node.children.length > 0,
           hasParent: !!parentId,
         },
@@ -122,23 +137,47 @@ export function ProjectWorkspace() {
           target: node.milestoneId,
           type: "smoothstep",
           style: { stroke: "hsl(var(--edge-color))", strokeWidth: 2 },
-          animated: node.milestoneId === treeData.activeMilestoneId,
+          animated: node.milestoneId === data.activeMilestoneId,
         });
       }
 
       if (node.children.length === 0) {
         yCounter++;
       } else {
-        node.children.forEach((child) => {
-          traverse(child, depth + 1, node.milestoneId);
-        });
+        node.children.forEach((child) => traverse(child, depth + 1, node.milestoneId));
       }
     };
 
-    treeData.tree.forEach((root) => traverse(root, 0));
+    data.tree.forEach((root) => traverse(root, 0));
+    return { newNodes, newEdges };
+  }, [decodedPath]);
+
+  // Convert tree to React Flow nodes/edges
+  useEffect(() => {
+    if (!treeData) return;
+    const { newNodes, newEdges } = buildLayout(treeData, true);
     setNodes(newNodes);
     setEdges(newEdges);
-  }, [treeData, setNodes, setEdges]);
+  }, [treeData, setNodes, setEdges, buildLayout]);
+
+  // Save positions on drag
+  const onNodeDragStop = useCallback(
+    () => {
+      savePositions(decodedPath, getNodes());
+    },
+    [decodedPath, getNodes]
+  );
+
+  // Reset layout
+  const handleResetLayout = useCallback(() => {
+    if (!treeData) return;
+    localStorage.removeItem(getStorageKey(decodedPath));
+    const { newNodes, newEdges } = buildLayout(treeData, false);
+    setNodes(newNodes);
+    setEdges(newEdges);
+    setTimeout(() => fitView({ padding: 0.3 }), 50);
+    toast.success("Layout reset to default");
+  }, [treeData, decodedPath, buildLayout, setNodes, setEdges, fitView]);
 
   const onNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
@@ -252,6 +291,10 @@ export function ProjectWorkspace() {
           </span>
         )}
         <div className="flex-1" />
+        <Button variant="ghost" size="sm" onClick={handleResetLayout} className="text-muted-foreground">
+          <RotateCcw size={14} className="mr-1.5" strokeWidth={2} />
+          Reset Layout
+        </Button>
         <button
           onClick={() => setSettingsOpen(true)}
           className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
@@ -272,6 +315,7 @@ export function ProjectWorkspace() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onNodeClick={onNodeClick}
+          onNodeDragStop={onNodeDragStop}
           nodeTypes={nodeTypes}
           deleteKeyCode={null}
           fitView
@@ -333,5 +377,13 @@ export function ProjectWorkspace() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export function ProjectWorkspace() {
+  return (
+    <ReactFlowProvider>
+      <ProjectWorkspaceInner />
+    </ReactFlowProvider>
   );
 }
