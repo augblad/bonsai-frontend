@@ -46,7 +46,7 @@ export function AppSidebar({ onNewProject }: { onNewProject: () => void }) {
             onClick={onNewProject}
             className="w-9 h-9 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
           >
-            <IconPlus size={20} stroke={1.5} />
+            <Plus size={20} strokeWidth={1.5} />
           </button>
         </TooltipTrigger>
         <TooltipContent side="right">New Project</TooltipContent>
