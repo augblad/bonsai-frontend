@@ -14,6 +14,8 @@ export function AppSidebar({ onNewProject }: { onNewProject: () => void }) {
 
   return (
     <aside className="flex flex-col items-center w-14 min-h-screen border-r border-border bg-card py-4 gap-2">
+      {/* Drag region */}
+      <div className="w-full h-2 shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties} />
       {/* Logo */}
       <div className="mb-4 flex items-center justify-center w-9 h-9 rounded-lg bg-primary text-primary-foreground font-bold text-sm select-none">
         B

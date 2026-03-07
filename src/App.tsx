@@ -32,6 +32,7 @@ const App = () => {
             <div className="flex min-h-screen w-full bg-background">
               <AppSidebar onNewProject={() => setCreateOpen(true)} />
               <main className="flex-1 flex flex-col min-h-0">
+                <div className="h-8 w-full shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties} />
                 <Routes>
                   <Route
                     path="/"
