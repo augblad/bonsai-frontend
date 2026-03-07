@@ -319,7 +319,7 @@ export function ProjectWorkspace() {
               placeholder="Describe this snapshot..."
               value={createMsg}
               onChange={(e) => setCreateMsg(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+              onKeyDown={(e) => e.key === "Enter" && !creating && handleCreate()}
             />
           </div>
           <DialogFooter>
