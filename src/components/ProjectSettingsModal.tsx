@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { autoWatchStart, autoWatchStop, autoWatchStatus, blacklistGet, blacklistSet, openDirectory, openFile } from "@/lib/api";
 import { toast } from "sonner";
 import { Trash2, FilePlus, FolderPlus, File, Folder } from "lucide-react";
@@ -167,9 +166,9 @@ export function ProjectSettingsModal({ open, onOpenChange, projectName, projectP
             </div>
 
             {blacklist.length > 0 && (
-              <ScrollArea className="mt-3 max-h-48 rounded-md border">
+              <div className="mt-3 max-h-60 overflow-y-auto rounded-md border scrollbar-thin">
                 <div className="p-2 space-y-1">
-                  {blacklist.map((item) => (
+                  {[...blacklist].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" })).map((item) => (
                     <div
                       key={item}
                       className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted/50 group"
@@ -193,7 +192,7 @@ export function ProjectSettingsModal({ open, onOpenChange, projectName, projectP
                     </div>
                   ))}
                 </div>
-              </ScrollArea>
+              </div>
             )}
 
             {blacklist.length === 0 && !loading && (
