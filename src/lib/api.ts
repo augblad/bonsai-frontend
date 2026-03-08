@@ -262,14 +262,15 @@ export async function milestoneDelete(_projectPath: string, _milestoneId: string
 export interface DialogResult {
   canceled: boolean;
   path: string | null;
+  paths: string[];
 }
 
 /** Open a native directory picker. Falls back to prompt() in dev/mock mode. */
-export async function openDirectory(title?: string, defaultPath?: string): Promise<DialogResult> {
-  if (eApi) return eApi.openDirectory(title, defaultPath);
+export async function openDirectory(title?: string, defaultPath?: string, multiSelect?: boolean): Promise<DialogResult> {
+  if (eApi) return eApi.openDirectory(title, defaultPath, multiSelect);
   // Mock fallback for dev/browser mode
   const result = window.prompt("Enter directory path:", defaultPath || "/home/user/projects");
-  return { canceled: result === null, path: result };
+  return { canceled: result === null, path: result, paths: result ? [result] : [] };
 }
 
 /** Open a native file picker. Falls back to prompt() in dev/mock mode. */
@@ -277,10 +278,11 @@ export async function openFile(
   title?: string,
   defaultPath?: string,
   filters?: { name: string; extensions: string[] }[],
+  multiSelect?: boolean,
 ): Promise<DialogResult> {
-  if (eApi) return eApi.openFile(title, defaultPath, filters);
+  if (eApi) return eApi.openFile(title, defaultPath, filters, multiSelect);
   const result = window.prompt("Enter file path:", defaultPath || "/home/user/file.txt");
-  return { canceled: result === null, path: result };
+  return { canceled: result === null, path: result, paths: result ? [result] : [] };
 }
 
 // ── Settings ───────────────────────────────────────────────

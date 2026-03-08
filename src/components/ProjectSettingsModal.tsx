@@ -63,16 +63,17 @@ export function ProjectSettingsModal({ open, onOpenChange, projectName, projectP
     return relative || null; // empty string = the project root itself, not valid
   };
 
-  const addToBlacklist = async (relativePath: string) => {
-    if (blacklist.includes(relativePath)) {
+  const addToBlacklist = async (relativePaths: string[]) => {
+    const newItems = relativePaths.filter((p) => !blacklist.includes(p));
+    if (newItems.length === 0) {
       toast.error("Already in blacklist");
       return;
     }
-    const updated = [...blacklist, relativePath];
+    const updated = [...blacklist, ...newItems];
     setBlacklist(updated);
     try {
       await blacklistSet(projectPath, updated);
-      toast.success("Added to blacklist");
+      toast.success(newItems.length === 1 ? "Added to blacklist" : `Added ${newItems.length} items to blacklist`);
     } catch {
       setBlacklist(blacklist); // revert
       toast.error("Failed to update blacklist");
@@ -92,27 +93,35 @@ export function ProjectSettingsModal({ open, onOpenChange, projectName, projectP
   };
 
   const handleAddFile = async () => {
-    const result = await openFile("Select file to blacklist", projectPath);
-    if (result.canceled || !result.path) return;
+    const result = await openFile("Select files to blacklist", projectPath, undefined, true);
+    if (result.canceled || result.paths.length === 0) return;
 
-    const relative = normalizeToProjectRelative(result.path);
-    if (!relative) {
-      toast.error("File must be inside the project directory");
-      return;
+    const relativePaths: string[] = [];
+    for (const p of result.paths) {
+      const relative = normalizeToProjectRelative(p);
+      if (!relative) {
+        toast.error("Files must be inside the project directory");
+        return;
+      }
+      relativePaths.push(relative);
     }
-    await addToBlacklist(relative);
+    await addToBlacklist(relativePaths);
   };
 
   const handleAddFolder = async () => {
-    const result = await openDirectory("Select folder to blacklist", projectPath);
-    if (result.canceled || !result.path) return;
+    const result = await openDirectory("Select folders to blacklist", projectPath, true);
+    if (result.canceled || result.paths.length === 0) return;
 
-    const relative = normalizeToProjectRelative(result.path);
-    if (!relative) {
-      toast.error("Folder must be inside the project directory");
-      return;
+    const relativePaths: string[] = [];
+    for (const p of result.paths) {
+      const relative = normalizeToProjectRelative(p);
+      if (!relative) {
+        toast.error("Folders must be inside the project directory");
+        return;
+      }
+      relativePaths.push(relative);
     }
-    await addToBlacklist(relative);
+    await addToBlacklist(relativePaths);
   };
 
   // Guess whether a blacklisted item is a folder (heuristic: no file extension)
@@ -149,11 +158,11 @@ export function ProjectSettingsModal({ open, onOpenChange, projectName, projectP
             <div className="flex gap-2 mt-3">
               <Button variant="outline" size="sm" onClick={handleAddFile} disabled={loading}>
                 <FilePlus className="h-4 w-4 mr-1.5" />
-                Add File
+                Add Files
               </Button>
               <Button variant="outline" size="sm" onClick={handleAddFolder} disabled={loading}>
                 <FolderPlus className="h-4 w-4 mr-1.5" />
-                Add Folder
+                Add Folders
               </Button>
             </div>
 
