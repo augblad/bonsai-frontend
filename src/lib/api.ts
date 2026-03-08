@@ -282,3 +282,20 @@ export async function openFile(
   const result = window.prompt("Enter file path:", defaultPath || "/home/user/file.txt");
   return { canceled: result === null, path: result };
 }
+
+// ── Settings ───────────────────────────────────────────────
+
+/** Get a single app setting by key. */
+export async function settingsGet(key: string): Promise<unknown> {
+  if (eApi) return eApi.settingsGet(key);
+  // Dev fallback: use localStorage
+  const raw = localStorage.getItem(`bonsai-setting-${key}`);
+  return raw !== null ? JSON.parse(raw) : undefined;
+}
+
+/** Set a single app setting by key. */
+export async function settingsSet(key: string, value: unknown): Promise<{ status: string }> {
+  if (eApi) return eApi.settingsSet(key, value);
+  localStorage.setItem(`bonsai-setting-${key}`, JSON.stringify(value));
+  return { status: "success" };
+}
