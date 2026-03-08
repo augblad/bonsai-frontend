@@ -21,6 +21,7 @@ import {
   milestoneCreate,
   milestoneRestore,
   milestoneDelete,
+  onAutoWatchMilestoneCreated,
   type TreeNode,
   type MilestoneRecord,
   type ProjectTreeResponse,
@@ -108,6 +109,16 @@ function ProjectWorkspaceInner() {
   useEffect(() => {
     loadTree();
   }, [loadTree]);
+
+  // Listen for auto-watch milestone creation events and refresh the tree
+  useEffect(() => {
+    const cleanup = onAutoWatchMilestoneCreated((eventProjectPath) => {
+      if (eventProjectPath === decodedPath) {
+        loadTree();
+      }
+    });
+    return cleanup;
+  }, [decodedPath, loadTree]);
 
   // Build default layout from tree
   const buildLayout = useCallback((data: ProjectTreeResponse, useSaved: boolean) => {

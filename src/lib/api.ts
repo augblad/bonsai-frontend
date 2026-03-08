@@ -319,3 +319,16 @@ export async function autoWatchStatus(projectPath: string): Promise<{ active: bo
   if (eApi) return eApi.autoWatchStatus(projectPath);
   return { active: false };
 }
+
+/**
+ * Subscribe to auto-watch milestone creation events.
+ * Returns a cleanup function to unsubscribe.
+ */
+export function onAutoWatchMilestoneCreated(
+  callback: (projectPath: string, milestoneId: string) => void,
+): () => void {
+  if (eApi?.onAutoWatchMilestoneCreated) {
+    return eApi.onAutoWatchMilestoneCreated(callback);
+  }
+  return () => {};
+}
