@@ -332,3 +332,20 @@ export function onAutoWatchMilestoneCreated(
   }
   return () => {};
 }
+
+// ── Blacklist ──────────────────────────────────────────────
+
+/** Get the blacklist (ignored files/folders) for a project. */
+export async function blacklistGet(projectPath: string): Promise<string[]> {
+  if (eApi) return eApi.blacklistGet(projectPath);
+  // Dev fallback: use localStorage
+  const raw = localStorage.getItem(`bonsai-blacklist-${projectPath}`);
+  return raw ? JSON.parse(raw) : [];
+}
+
+/** Set the blacklist (ignored files/folders) for a project. */
+export async function blacklistSet(projectPath: string, items: string[]): Promise<{ status: string }> {
+  if (eApi) return eApi.blacklistSet(projectPath, items);
+  localStorage.setItem(`bonsai-blacklist-${projectPath}`, JSON.stringify(items));
+  return { status: "success" };
+}
