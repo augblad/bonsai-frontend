@@ -4,6 +4,25 @@ import { format } from "date-fns";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+export const BRANCH_COLOR_PALETTE = [
+  "#3b82f6", // blue
+  "#22c55e", // green
+  "#a855f7", // purple
+  "#f59e0b", // amber
+  "#ef4444", // red
+  "#06b6d4", // cyan
+  "#ec4899", // pink
+  "#14b8a6", // teal
+];
+
+const TAG_COLORS: Record<string, string> = {
+  release: "#22c55e",
+  experiment: "#a855f7",
+  wip: "#f59e0b",
+  backup: "#3b82f6",
+  archived: "#6b7280",
+};
+
 interface MilestoneNodeData {
   label: string;
   message: string;
@@ -13,6 +32,8 @@ interface MilestoneNodeData {
   isActive: boolean;
   hasChildren: boolean;
   hasParent: boolean;
+  tags?: string[];
+  branchColor?: string | null;
   onCreateMilestone?: () => void;
 }
 
@@ -29,11 +50,25 @@ function MilestoneNodeComponent({ data, selected }: NodeProps) {
           selected && "border-primary",
           d.isActive && "ring-2 ring-node-glow node-active-glow border-node-glow"
         )}
+        style={d.branchColor ? { borderLeftWidth: 3, borderLeftColor: d.branchColor } : {}}
       >
         <p className="text-sm font-medium truncate">{d.message}</p>
         <p className="text-[10px] text-muted-foreground mt-1">
           {format(new Date(d.createdAt), "MMM d, yyyy · h:mm a")}
         </p>
+        {d.tags && d.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {d.tags.map((tag) => (
+              <span
+                key={tag}
+                className="px-1.5 py-px rounded-full text-[9px] font-medium text-white"
+                style={{ backgroundColor: TAG_COLORS[tag] || "#6b7280" }}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
       {d.hasChildren && <Handle type="source" position={Position.Right} className="!w-2 !h-2 !bg-muted-foreground !border-none" isConnectable={false} />}
       {d.isActive && d.onCreateMilestone && (

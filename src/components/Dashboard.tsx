@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
-import { MoreHorizontal, Trash2, Folder, Clock, GitBranch } from "lucide-react";
-import { projectList, projectDelete, autoWatchStatus, type ProjectSummary } from "@/lib/api";
+import { MoreHorizontal, Trash2, Folder, Clock, GitBranch, Pencil } from "lucide-react";
+import { projectList, projectDelete, projectRename, autoWatchStatus, type ProjectSummary } from "@/lib/api";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -21,12 +21,23 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<ProjectSummary | null>(null);
+  const [renameTarget, setRenameTarget] = useState<ProjectSummary | null>(null);
+  const [newName, setNewName] = useState("");
   const [watchedPaths, setWatchedPaths] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
 
@@ -55,6 +66,19 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
     await projectDelete(deleteTarget.projectPath);
     setDeleteTarget(null);
     load();
+  };
+
+  const handleRename = async () => {
+    if (!renameTarget || !newName.trim()) return;
+    try {
+      await projectRename(renameTarget.projectPath, newName.trim());
+      toast.success("Project renamed");
+      setRenameTarget(null);
+      setNewName("");
+      load();
+    } catch {
+      toast.error("Failed to rename project");
+    }
   };
 
   if (loading) {
@@ -111,6 +135,11 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
                 </div>
                 <h3 className="font-medium text-sm mb-1">{project.name}</h3>
                 <p className="text-xs text-muted-foreground font-mono break-all mb-3">{project.projectPath}</p>
+                {project.lastMilestoneMessage && (
+                  <p className="text-xs text-muted-foreground mb-2 truncate italic">
+                    Last: {project.lastMilestoneMessage}
+                  </p>
+                )}
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <GitBranch size={14} strokeWidth={1.5} />
@@ -132,6 +161,12 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
               </motion.div>
             </ContextMenuTrigger>
             <ContextMenuContent>
+              <ContextMenuItem
+                onClick={() => { setRenameTarget(project); setNewName(project.name); }}
+              >
+                <Pencil size={16} className="mr-2" strokeWidth={1.5} />
+                Rename Project
+              </ContextMenuItem>
               <ContextMenuItem
                 className="text-destructive focus:text-destructive"
                 onClick={() => setDeleteTarget(project)}
@@ -160,6 +195,26 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Rename Dialog */}
+      <Dialog open={!!renameTarget} onOpenChange={(o) => { if (!o) setRenameTarget(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rename Project</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleRename()}
+            placeholder="New project name"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameTarget(null)}>Cancel</Button>
+            <Button onClick={handleRename} disabled={!newName.trim()}>Rename</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

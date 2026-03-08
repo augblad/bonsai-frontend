@@ -1,11 +1,26 @@
+import { useEffect, useState } from "react";
 import { useTheme } from "@/lib/theme";
 import { Sun, Moon, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { settingsGet, settingsSet } from "@/lib/api";
 
 export function SettingsPage() {
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
+  const [branchColors, setBranchColors] = useState(false);
+
+  useEffect(() => {
+    settingsGet("branchColorsEnabled").then((val) => {
+      if (typeof val === "boolean") setBranchColors(val);
+    });
+  }, []);
+
+  const handleBranchColorsToggle = async (checked: boolean) => {
+    setBranchColors(checked);
+    await settingsSet("branchColorsEnabled", checked);
+  };
 
   return (
     <div className="p-8 max-w-lg">
@@ -31,6 +46,15 @@ export function SettingsPage() {
           >
             {theme === "dark" ? <Sun size={18} strokeWidth={1.5} /> : <Moon size={18} strokeWidth={1.5} />}
           </button>
+        </div>
+
+        {/* Branch colors */}
+        <div className="flex items-center justify-between py-3 border-b border-border">
+          <div>
+            <Label className="text-sm font-medium">Branch colors</Label>
+            <p className="text-xs text-muted-foreground mt-0.5">Color-code branches on the timeline canvas</p>
+          </div>
+          <Switch checked={branchColors} onCheckedChange={handleBranchColorsToggle} />
         </div>
       </div>
     </div>

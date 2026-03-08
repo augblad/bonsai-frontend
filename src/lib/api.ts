@@ -5,6 +5,7 @@ export interface ProjectSummary {
   createdAt: string;
   lastMilestoneAt: string | null;
   milestoneCount: number;
+  lastMilestoneMessage: string | null;
 }
 
 export interface TreeNode {
@@ -14,6 +15,7 @@ export interface TreeNode {
   branch: string;
   createdAt: string;
   children: TreeNode[];
+  tags?: string[];
 }
 
 export interface MilestoneRecord {
@@ -24,6 +26,7 @@ export interface MilestoneRecord {
   parentMilestoneId: string | null;
   patchFiles: string[];
   createdAt: string;
+  tags?: string[];
 }
 
 export interface ProjectTreeResponse {
@@ -47,6 +50,7 @@ let mockProjects: ProjectSummary[] = [
     createdAt: "2026-02-10T09:00:00Z",
     lastMilestoneAt: "2026-03-06T14:30:00Z",
     milestoneCount: 7,
+    lastMilestoneMessage: "Final polish & QA",
   },
   {
     id: "proj-2",
@@ -55,6 +59,7 @@ let mockProjects: ProjectSummary[] = [
     createdAt: "2026-01-15T12:00:00Z",
     lastMilestoneAt: "2026-03-05T18:00:00Z",
     milestoneCount: 4,
+    lastMilestoneMessage: "Launch campaign",
   },
   {
     id: "proj-3",
@@ -63,6 +68,7 @@ let mockProjects: ProjectSummary[] = [
     createdAt: "2026-03-01T08:00:00Z",
     lastMilestoneAt: null,
     milestoneCount: 1,
+    lastMilestoneMessage: "Initial project snapshot",
   },
 ];
 
@@ -174,7 +180,7 @@ export async function projectCreate(projectPath: string, name: string): Promise<
     return { id: "", status: "error", error: "duplicate_name" };
   }
   const id = `proj-${nextMockId++}`;
-  mockProjects.push({ id, name, projectPath, createdAt: new Date().toISOString(), lastMilestoneAt: null, milestoneCount: 0 });
+  mockProjects.push({ id, name, projectPath, createdAt: new Date().toISOString(), lastMilestoneAt: null, milestoneCount: 0, lastMilestoneMessage: null });
   return { id, status: "success" };
 }
 
@@ -349,5 +355,69 @@ export async function blacklistGet(projectPath: string): Promise<string[]> {
 export async function blacklistSet(projectPath: string, items: string[]): Promise<{ status: string }> {
   if (eApi) return eApi.blacklistSet(projectPath, items);
   localStorage.setItem(`bonsai-blacklist-${projectPath}`, JSON.stringify(items));
+  return { status: "success" };
+}
+
+// ── Milestone Storage Size ─────────────────────────────────
+
+/** Get total storage size (bytes) for a specific milestone. */
+export async function milestoneStorageSize(projectPath: string, milestoneId: string): Promise<{ totalBytes: number }> {
+  if (eApi) return eApi.milestoneStorageSize(projectPath, milestoneId);
+  return { totalBytes: 0 };
+}
+
+// ── Milestone Tracked Files ────────────────────────────────
+
+/** Get list of tracked file paths for a specific milestone. */
+export async function milestoneTrackedFiles(projectPath: string, milestoneId: string): Promise<string[]> {
+  if (eApi) return eApi.milestoneTrackedFiles(projectPath, milestoneId);
+  return [];
+}
+
+// ── Project Has Changes ────────────────────────────────────
+
+/** Check if project has unsaved changes since the last milestone. */
+export async function projectHasChanges(projectPath: string): Promise<{ hasChanges: boolean }> {
+  if (eApi) return eApi.projectHasChanges(projectPath);
+  return { hasChanges: false };
+}
+
+// ── Milestone Rename ───────────────────────────────────────
+
+/** Rename a milestone's message. */
+export async function milestoneRename(projectPath: string, milestoneId: string, newMessage: string): Promise<{ status: string }> {
+  if (eApi) return eApi.milestoneRename(projectPath, milestoneId, newMessage);
+  return { status: "success" };
+}
+
+// ── Milestone Tags ─────────────────────────────────────────
+
+/** Set tags on a milestone. */
+export async function milestoneSetTags(projectPath: string, milestoneId: string, tags: string[]): Promise<{ status: string }> {
+  if (eApi) return eApi.milestoneSetTags(projectPath, milestoneId, tags);
+  return { status: "success" };
+}
+
+// ── Milestone Export ZIP ───────────────────────────────────
+
+/** Export a milestone as a ZIP archive. */
+export async function milestoneExportZip(projectPath: string, milestoneId: string): Promise<{ status: string; path?: string }> {
+  if (eApi) return eApi.milestoneExportZip(projectPath, milestoneId);
+  return { status: "error" };
+}
+
+// ── Project Storage Stats ──────────────────────────────────
+
+/** Get storage statistics for a project (base + patches sizes). */
+export async function projectStorageStats(projectPath: string): Promise<{ totalBase: number; totalPatches: number; milestoneCount: number }> {
+  if (eApi) return eApi.projectStorageStats(projectPath);
+  return { totalBase: 0, totalPatches: 0, milestoneCount: 0 };
+}
+
+// ── Project Rename ─────────────────────────────────────────
+
+/** Rename a project. */
+export async function projectRename(projectPath: string, newName: string): Promise<{ status: string }> {
+  if (eApi) return eApi.projectRename(projectPath, newName);
   return { status: "success" };
 }

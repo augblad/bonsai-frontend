@@ -5,6 +5,7 @@ import {
   ReactFlowProvider,
   Background,
   Controls,
+  MiniMap,
   useNodesState,
   useEdgesState,
   useReactFlow,
@@ -14,19 +15,22 @@ import {
   type NodeMouseHandler,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { ArrowLeft, Plus, Settings, Loader2, RotateCcw } from "lucide-react";
+import { ArrowLeft, Plus, Settings, Loader2, RotateCcw, Search, BarChart3 } from "lucide-react";
 import {
   projectTree,
   projectList,
   milestoneCreate,
   milestoneRestore,
   milestoneDelete,
+  projectHasChanges,
+  projectStorageStats,
+  settingsGet,
   onAutoWatchMilestoneCreated,
   type TreeNode,
   type MilestoneRecord,
   type ProjectTreeResponse,
 } from "@/lib/api";
-import { MilestoneNode } from "@/components/MilestoneNode";
+import { MilestoneNode, BRANCH_COLOR_PALETTE } from "@/components/MilestoneNode";
 import { MilestonePanel } from "@/components/MilestonePanel";
 import { ProjectSettingsModal } from "@/components/ProjectSettingsModal";
 import { Button } from "@/components/ui/button";
@@ -38,6 +42,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -66,6 +80,14 @@ function loadPositions(projectPath: string): Record<string, { x: number; y: numb
   }
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+}
+
 function ProjectWorkspaceInner() {
   const { projectPath } = useParams<{ projectPath: string }>();
   const decodedPath = decodeURIComponent(projectPath || "");
@@ -87,8 +109,42 @@ function ProjectWorkspaceInner() {
   const [creating, setCreating] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [branching, setBranching] = useState(false);
+
+  // Unsaved changes warning
+  const [confirmRestoreOpen, setConfirmRestoreOpen] = useState(false);
+  const [confirmBranchOpen, setConfirmBranchOpen] = useState(false);
+
+  // Search & filter
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchVisible, setSearchVisible] = useState(false);
+
+  // Storage stats
+  const [statsOpen, setStatsOpen] = useState(false);
+  const [storageStats, setStorageStats] = useState<{ totalBase: number; totalPatches: number; milestoneCount: number } | null>(null);
+
+  // Branch colors setting
+  const [branchColorsEnabled, setBranchColorsEnabled] = useState(false);
 
   const [projectName, setProjectName] = useState("Project");
+
+  // Load branch colors setting
+  useEffect(() => {
+    settingsGet("branchColorsEnabled").then((val) => {
+      if (typeof val === "boolean") setBranchColorsEnabled(val);
+    });
+  }, []);
+
+  // Compute branch→color map
+  const branchColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (!branchColorsEnabled || !treeData) return map;
+    const branches = treeData.branches;
+    branches.forEach((b, i) => {
+      map.set(b, BRANCH_COLOR_PALETTE[i % BRANCH_COLOR_PALETTE.length]);
+    });
+    return map;
+  }, [branchColorsEnabled, treeData]);
 
   // Fetch actual project name from project list
   useEffect(() => {
@@ -134,6 +190,7 @@ function ProjectWorkspaceInner() {
     const traverse = (node: TreeNode, depth: number, parentId?: string) => {
       const defaultPos = { x: depth * X_GAP, y: yCounter * Y_GAP };
       const position = saved?.[node.milestoneId] ?? defaultPos;
+      const color = branchColorMap.get(node.branch) || null;
 
       newNodes.push({
         id: node.milestoneId,
@@ -148,6 +205,8 @@ function ProjectWorkspaceInner() {
           isActive: node.milestoneId === data.activeMilestoneId,
           hasChildren: node.children.length > 0,
           hasParent: !!parentId,
+          tags: node.tags,
+          branchColor: color,
           onCreateMilestone: () => setCreateOpen(true),
         },
       });
@@ -158,7 +217,10 @@ function ProjectWorkspaceInner() {
           source: parentId,
           target: node.milestoneId,
           type: "smoothstep",
-          style: { stroke: "hsl(var(--edge-color))", strokeWidth: 2 },
+          style: {
+            stroke: color || "hsl(var(--edge-color))",
+            strokeWidth: 2,
+          },
           animated: node.milestoneId === data.activeMilestoneId,
         });
       }
@@ -172,15 +234,31 @@ function ProjectWorkspaceInner() {
 
     data.tree.forEach((root) => traverse(root, 0));
     return { newNodes, newEdges };
-  }, [decodedPath]);
+  }, [decodedPath, branchColorMap]);
 
   // Convert tree to React Flow nodes/edges
   useEffect(() => {
     if (!treeData) return;
     const { newNodes, newEdges } = buildLayout(treeData, true);
+
+    // Apply search filter (dim non-matching nodes)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      for (const n of newNodes) {
+        const d = n.data as any;
+        const matches =
+          d.message?.toLowerCase().includes(q) ||
+          d.branch?.toLowerCase().includes(q) ||
+          (d.tags as string[] | undefined)?.some((t: string) => t.toLowerCase().includes(q));
+        if (!matches) {
+          n.style = { ...n.style, opacity: 0.25 };
+        }
+      }
+    }
+
     setNodes(newNodes);
     setEdges(newEdges);
-  }, [treeData, setNodes, setEdges, buildLayout]);
+  }, [treeData, setNodes, setEdges, buildLayout, searchQuery]);
 
   // Save positions on drag
   const onNodeDragStop = useCallback(
@@ -261,6 +339,68 @@ function ProjectWorkspaceInner() {
     }
   };
 
+  /** Check for unsaved changes before restoring. */
+  const handleRestoreWithWarning = async () => {
+    if (!selectedMilestone) return;
+    try {
+      const { hasChanges } = await projectHasChanges(decodedPath);
+      if (hasChanges) {
+        setConfirmRestoreOpen(true);
+      } else {
+        handleRestore();
+      }
+    } catch {
+      // If check fails, proceed anyway
+      handleRestore();
+    }
+  };
+
+  const handleBranchFromHere = async () => {
+    if (!selectedMilestone) return;
+    setBranching(true);
+    try {
+      // First restore to that milestone
+      const restoreRes = await milestoneRestore(decodedPath, selectedMilestone.milestoneId);
+      if (restoreRes.status !== "success") {
+        toast.error("Failed to restore before branching");
+        return;
+      }
+      // Then open the create dialog for the new branch milestone
+      setPanelOpen(false);
+      setCreateOpen(true);
+      loadTree();
+    } catch {
+      toast.error("Branch failed");
+    } finally {
+      setBranching(false);
+    }
+  };
+
+  /** Check for unsaved changes before branching. */
+  const handleBranchWithWarning = async () => {
+    if (!selectedMilestone) return;
+    try {
+      const { hasChanges } = await projectHasChanges(decodedPath);
+      if (hasChanges) {
+        setConfirmBranchOpen(true);
+      } else {
+        handleBranchFromHere();
+      }
+    } catch {
+      handleBranchFromHere();
+    }
+  };
+
+  const handleOpenStats = async () => {
+    setStatsOpen(true);
+    try {
+      const stats = await projectStorageStats(decodedPath);
+      setStorageStats(stats);
+    } catch {
+      setStorageStats(null);
+    }
+  };
+
   const handleDelete = async () => {
     if (!selectedMilestone) return;
     setDeleting(true);
@@ -278,6 +418,18 @@ function ProjectWorkspaceInner() {
       setDeleting(false);
     }
   };
+
+  // Keyboard shortcut: Ctrl+M to create milestone
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "m") {
+        e.preventDefault();
+        setCreateOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   const activeName = treeData?.milestones.find(
     (m) => m.milestoneId === treeData.activeMilestoneId
@@ -315,6 +467,29 @@ function ProjectWorkspaceInner() {
           </span>
         )}
         <div className="flex-1" />
+        {searchVisible && (
+          <Input
+            className="w-48 h-8 text-xs"
+            placeholder="Search milestones..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            autoFocus
+          />
+        )}
+        <button
+          onClick={() => { setSearchVisible(!searchVisible); if (searchVisible) setSearchQuery(""); }}
+          className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          title="Search milestones"
+        >
+          <Search size={16} strokeWidth={1.5} />
+        </button>
+        <button
+          onClick={handleOpenStats}
+          className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          title="Storage stats"
+        >
+          <BarChart3 size={16} strokeWidth={1.5} />
+        </button>
         <Button variant="ghost" size="sm" onClick={handleResetLayout} className="text-muted-foreground">
           <RotateCcw size={14} className="mr-1.5" strokeWidth={2} />
           Reset Layout
@@ -350,6 +525,12 @@ function ProjectWorkspaceInner() {
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="hsl(var(--canvas-dot))" />
           <Controls />
+          <MiniMap
+            nodeStrokeWidth={3}
+            zoomable
+            pannable
+            style={{ background: "hsl(var(--card))" }}
+          />
         </ReactFlow>
       </div>
 
@@ -360,10 +541,14 @@ function ProjectWorkspaceInner() {
         milestone={selectedMilestone}
         hasChildren={selectedHasChildren}
         isActive={selectedMilestone?.milestoneId === treeData?.activeMilestoneId}
-        onRestore={handleRestore}
+        onRestore={handleRestoreWithWarning}
         onDelete={handleDelete}
         restoring={restoring}
         deleting={deleting}
+        projectPath={decodedPath}
+        onBranchFromHere={handleBranchWithWarning}
+        branching={branching}
+        onMilestoneUpdated={loadTree}
       />
 
       {/* Project Settings */}
@@ -399,6 +584,75 @@ function ProjectWorkspaceInner() {
               Save Milestone
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Restore with unsaved changes */}
+      <AlertDialog open={confirmRestoreOpen} onOpenChange={setConfirmRestoreOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes in your project. Restoring to this milestone will discard them. Continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setConfirmRestoreOpen(false); handleRestore(); }}>
+              Restore Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirm Branch with unsaved changes */}
+      <AlertDialog open={confirmBranchOpen} onOpenChange={setConfirmBranchOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes in your project. Branching from this milestone will discard them. Continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setConfirmBranchOpen(false); handleBranchFromHere(); }}>
+              Branch Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Storage Stats Dialog */}
+      <Dialog open={statsOpen} onOpenChange={setStatsOpen}>
+        <DialogContent className="sm:max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Storage Stats</DialogTitle>
+          </DialogHeader>
+          {storageStats ? (
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Milestones</span>
+                <span className="font-medium">{storageStats.milestoneCount}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Base snapshots</span>
+                <span className="font-medium">{formatBytes(storageStats.totalBase)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Patches</span>
+                <span className="font-medium">{formatBytes(storageStats.totalPatches)}</span>
+              </div>
+              <div className="flex justify-between border-t pt-2">
+                <span className="text-muted-foreground">Total</span>
+                <span className="font-medium">{formatBytes(storageStats.totalBase + storageStats.totalPatches)}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-center py-4">
+              <Loader2 size={20} className="animate-spin text-muted-foreground" />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

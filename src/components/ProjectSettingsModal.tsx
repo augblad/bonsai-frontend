@@ -3,8 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { autoWatchStart, autoWatchStop, autoWatchStatus, blacklistGet, blacklistSet, openDirectory, openFile } from "@/lib/api";
+import { autoWatchStart, autoWatchStop, autoWatchStatus, blacklistGet, blacklistSet, openDirectory, openFile, settingsGet, settingsSet } from "@/lib/api";
 import { toast } from "sonner";
 import { Trash2, FilePlus, FolderPlus, File, Folder } from "lucide-react";
 
@@ -19,6 +20,7 @@ export function ProjectSettingsModal({ open, onOpenChange, projectName, projectP
   const [autoWatch, setAutoWatch] = useState(false);
   const [loading, setLoading] = useState(true);
   const [blacklist, setBlacklist] = useState<string[]>([]);
+  const [debounceMs, setDebounceMs] = useState(10000);
 
   // Fetch current status when the modal opens
   useEffect(() => {
@@ -28,6 +30,9 @@ export function ProjectSettingsModal({ open, onOpenChange, projectName, projectP
     Promise.all([
       autoWatchStatus(projectPath).then((res) => setAutoWatch(res.active)),
       blacklistGet(projectPath).then((items) => setBlacklist(items)),
+      settingsGet("autoWatchDebounceMs").then((val) => {
+        if (typeof val === "number") setDebounceMs(val);
+      }),
     ])
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -46,6 +51,16 @@ export function ProjectSettingsModal({ open, onOpenChange, projectName, projectP
     } catch {
       setAutoWatch(!checked); // revert on error
       toast.error("Failed to update auto-watch");
+    }
+  };
+
+  const handleDebounceChange = async (value: string) => {
+    const ms = Number(value);
+    setDebounceMs(ms);
+    try {
+      await settingsSet("autoWatchDebounceMs", ms);
+    } catch {
+      toast.error("Failed to save debounce setting");
     }
   };
 
@@ -140,9 +155,28 @@ export function ProjectSettingsModal({ open, onOpenChange, projectName, projectP
           <div className="flex items-center justify-between">
             <div>
               <Label className="text-sm font-medium">Auto-watch for changes</Label>
-              <p className="text-xs text-muted-foreground mt-0.5">Automatically creates a milestone when files change (10s debounce)</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Automatically creates a milestone when files change</p>
             </div>
             <Switch checked={autoWatch} onCheckedChange={handleToggle} disabled={loading} />
+          </div>
+
+          {/* Debounce interval */}
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-sm font-medium">Debounce interval</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">Wait time before auto-saving after changes</p>
+            </div>
+            <Select value={String(debounceMs)} onValueChange={handleDebounceChange} disabled={loading}>
+              <SelectTrigger className="w-24 h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5000">5s</SelectItem>
+                <SelectItem value="10000">10s</SelectItem>
+                <SelectItem value="30000">30s</SelectItem>
+                <SelectItem value="60000">1 min</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <Separator />
