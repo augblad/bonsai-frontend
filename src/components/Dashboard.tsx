@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { MoreHorizontal, Trash2, Folder, Clock, GitBranch } from "lucide-react";
-import { projectList, projectDelete, type ProjectSummary } from "@/lib/api";
+import { projectList, projectDelete, autoWatchStatus, type ProjectSummary } from "@/lib/api";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -27,12 +27,24 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<ProjectSummary | null>(null);
+  const [watchedPaths, setWatchedPaths] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
 
   const load = async () => {
     setLoading(true);
     const list = await projectList();
     setProjects(list);
+    // Check auto-watch status for each project
+    const watched = new Set<string>();
+    await Promise.all(
+      list.map(async (p) => {
+        try {
+          const res = await autoWatchStatus(p.projectPath);
+          if (res.active) watched.add(p.projectPath);
+        } catch {}
+      }),
+    );
+    setWatchedPaths(watched);
     setLoading(false);
   };
 
@@ -108,6 +120,12 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
                     <span className="flex items-center gap-1">
                       <Clock size={14} strokeWidth={1.5} />
                       {formatDistanceToNow(new Date(project.lastMilestoneAt), { addSuffix: true })}
+                    </span>
+                  )}
+                  {watchedPaths.has(project.projectPath) && (
+                    <span className="flex items-center gap-1 text-primary">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                      Auto-watch
                     </span>
                   )}
                 </div>

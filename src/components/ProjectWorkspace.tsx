@@ -360,6 +360,7 @@ function ProjectWorkspaceInner() {
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         projectName={projectName}
+        projectPath={decodedPath}
       />
 
       {/* Create Milestone Dialog */}

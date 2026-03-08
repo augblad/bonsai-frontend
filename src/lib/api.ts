@@ -299,3 +299,23 @@ export async function settingsSet(key: string, value: unknown): Promise<{ status
   localStorage.setItem(`bonsai-setting-${key}`, JSON.stringify(value));
   return { status: "success" };
 }
+
+// ── Auto-Watch ─────────────────────────────────────────────
+
+/** Start auto-watching a project folder for file changes. */
+export async function autoWatchStart(projectPath: string): Promise<{ status: string }> {
+  if (eApi) return eApi.autoWatchStart(projectPath);
+  return { status: "success" };
+}
+
+/** Stop auto-watching a project folder. */
+export async function autoWatchStop(projectPath: string): Promise<{ status: string }> {
+  if (eApi) return eApi.autoWatchStop(projectPath);
+  return { status: "success" };
+}
+
+/** Check if auto-watch is active for a project. */
+export async function autoWatchStatus(projectPath: string): Promise<{ active: boolean }> {
+  if (eApi) return eApi.autoWatchStatus(projectPath);
+  return { active: false };
+}

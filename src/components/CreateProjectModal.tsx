@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, Loader2 } from "lucide-react";
-import { projectCreate, openDirectory } from "@/lib/api";
+import { projectCreate, openDirectory, autoWatchStart } from "@/lib/api";
 import { toast } from "sonner";
 
 interface Props {
@@ -43,10 +43,15 @@ export function CreateProjectModal({ open, onOpenChange, onCreated }: Props) {
       if (res.status === "error") {
         setError(res.error === "duplicate_name" ? "A project with this name already exists." : "File path already exists");
       } else {
+        // Enable auto-watch if the user toggled it on
+        if (autoWatch) {
+          autoWatchStart(path).catch(() => {});
+        }
         toast.success(`Project "${name}" created`);
         const createdPath = path;
         setName("");
         setPath("");
+        setAutoWatch(false);
         onOpenChange(false);
         onCreated();
         navigate(`/project/${encodeURIComponent(createdPath)}`);
@@ -91,6 +96,24 @@ export function CreateProjectModal({ open, onOpenChange, onCreated }: Props) {
                 Browse
               </Button>
             </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="auto-watch">Auto-Watch Changes</Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info size={14} className="text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-xs">
+                  Automatically creates a milestone when files in the project folder change. Waits 10 seconds after the last change to avoid conflicts.
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <Switch
+              id="auto-watch"
+              checked={autoWatch}
+              onCheckedChange={setAutoWatch}
+            />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
