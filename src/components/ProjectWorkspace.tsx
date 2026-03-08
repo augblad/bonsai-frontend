@@ -6,9 +6,13 @@ import {
   Background,
   Controls,
   MiniMap,
+  Panel,
   useNodesState,
   useEdgesState,
   useReactFlow,
+  useNodes,
+  useStore,
+  getNodesBounds,
   type Node,
   type Edge,
   BackgroundVariant,
@@ -57,6 +61,81 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 const nodeTypes = { milestone: MilestoneNode };
+
+const MM_W = 200;
+const MM_H = 150;
+const MM_OFFSET_SCALE = 5;
+
+/**
+ * Overlays a rounded-corner viewport-indicator rect on top of the MiniMap.
+ * Mirrors the viewBox math from ReactFlow's MiniMapComponent internals.
+ */
+function MinimapViewportOverlay() {
+  const transform = useStore((s: any) => s.transform as [number, number, number]);
+  const flowW = useStore((s: any) => s.width as number);
+  const flowH = useStore((s: any) => s.height as number);
+  const nodes = useNodes();
+
+  const viewBB = {
+    x: -transform[0] / transform[2],
+    y: -transform[1] / transform[2],
+    width: flowW / transform[2],
+    height: flowH / transform[2],
+  };
+
+  // Union of node bounds and viewBB (matches ReactFlow's internal boundingRect)
+  let boundingRect = viewBB;
+  if (nodes.length > 0) {
+    const nb = getNodesBounds(nodes);
+    const x = Math.min(nb.x, viewBB.x);
+    const y = Math.min(nb.y, viewBB.y);
+    boundingRect = {
+      x,
+      y,
+      width: Math.max(nb.x + nb.width, viewBB.x + viewBB.width) - x,
+      height: Math.max(nb.y + nb.height, viewBB.y + viewBB.height) - y,
+    };
+  }
+
+  const viewScale = Math.max(boundingRect.width / MM_W, boundingRect.height / MM_H);
+  const viewWidth = viewScale * MM_W;
+  const viewHeight = viewScale * MM_H;
+  const offset = MM_OFFSET_SCALE * viewScale;
+  const vbX = boundingRect.x - (viewWidth - boundingRect.width) / 2 - offset;
+  const vbY = boundingRect.y - (viewHeight - boundingRect.height) / 2 - offset;
+  const vbW = viewWidth + offset * 2;
+  const vbH = viewHeight + offset * 2;
+
+  // Corner radius scaled so it looks like ~8px on the minimap
+  const r = 8 * viewScale;
+
+  return (
+    <Panel
+      position="bottom-right"
+      style={{ width: MM_W, height: MM_H, pointerEvents: "none", zIndex: 6 }}
+    >
+      <svg
+        width={MM_W}
+        height={MM_H}
+        viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
+        style={{ position: "absolute", top: 0, left: 0, overflow: "visible", pointerEvents: "none" }}
+      >
+        <rect
+          x={viewBB.x}
+          y={viewBB.y}
+          width={viewBB.width}
+          height={viewBB.height}
+          rx={r}
+          ry={r}
+          fill="none"
+          stroke="#4762ebde"
+          strokeWidth={2 * viewScale}
+          pointerEvents="none"
+        />
+      </svg>
+    </Panel>
+  );
+}
 
 function getStorageKey(projectPath: string) {
   return `bonsai-positions-${projectPath}`;
@@ -125,13 +204,18 @@ function ProjectWorkspaceInner() {
 
   // Branch colors setting
   const [branchColorsEnabled, setBranchColorsEnabled] = useState(false);
+  // Minimap setting
+  const [minimapEnabled, setMinimapEnabled] = useState(false);
 
   const [projectName, setProjectName] = useState("Project");
 
-  // Load branch colors setting
+  // Load branch colors and minimap settings
   useEffect(() => {
     settingsGet("branchColorsEnabled").then((val) => {
       if (typeof val === "boolean") setBranchColorsEnabled(val);
+    });
+    settingsGet("minimapEnabled").then((val) => {
+      if (typeof val === "boolean") setMinimapEnabled(val);
     });
   }, []);
 
@@ -525,12 +609,27 @@ function ProjectWorkspaceInner() {
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="hsl(var(--canvas-dot))" />
           <Controls />
-          <MiniMap
-            nodeStrokeWidth={3}
-            zoomable
-            pannable
-            style={{ background: "hsl(var(--card))" }}
-          />
+          {minimapEnabled && (
+            <>
+              <MiniMap
+                nodeStrokeWidth={3}
+                zoomable
+                pannable
+                nodeColor="#4762ebbe"
+                nodeStrokeColor="#4763eb"
+                maskColor="rgba(71,99,235,0.25)"
+                style={{
+                  background: "#4763eb22",
+                  borderRadius: "10px",
+                  border: "1.25px solid #4762eb60",
+                  width: MM_W,
+                  height: MM_H,
+                }}
+                nodeBorderRadius={8}
+              />
+              <MinimapViewportOverlay />
+            </>
+          )}
         </ReactFlow>
       </div>
 

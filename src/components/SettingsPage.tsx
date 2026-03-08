@@ -10,16 +10,25 @@ export function SettingsPage() {
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
   const [branchColors, setBranchColors] = useState(false);
+  const [minimapEnabled, setMinimapEnabled] = useState(false);
 
   useEffect(() => {
     settingsGet("branchColorsEnabled").then((val) => {
       if (typeof val === "boolean") setBranchColors(val);
+    });
+    settingsGet("minimapEnabled").then((val) => {
+      if (typeof val === "boolean") setMinimapEnabled(val);
     });
   }, []);
 
   const handleBranchColorsToggle = async (checked: boolean) => {
     setBranchColors(checked);
     await settingsSet("branchColorsEnabled", checked);
+  };
+
+  const handleMinimapToggle = async (checked: boolean) => {
+    setMinimapEnabled(checked);
+    await settingsSet("minimapEnabled", checked);
   };
 
   return (
@@ -55,6 +64,15 @@ export function SettingsPage() {
             <p className="text-xs text-muted-foreground mt-0.5">Color-code branches on the timeline canvas</p>
           </div>
           <Switch checked={branchColors} onCheckedChange={handleBranchColorsToggle} />
+        </div>
+
+        {/* Minimap */}
+        <div className="flex items-center justify-between py-3 border-b border-border">
+          <div>
+            <Label className="text-sm font-medium">Minimap</Label>
+            <p className="text-xs text-muted-foreground mt-0.5">Show minimap overview on the timeline canvas</p>
+          </div>
+          <Switch checked={minimapEnabled} onCheckedChange={handleMinimapToggle} />
         </div>
       </div>
     </div>
