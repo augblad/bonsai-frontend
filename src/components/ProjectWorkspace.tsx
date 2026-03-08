@@ -137,6 +137,7 @@ function ProjectWorkspaceInner() {
           isActive: node.milestoneId === data.activeMilestoneId,
           hasChildren: node.children.length > 0,
           hasParent: !!parentId,
+          onCreateMilestone: () => setCreateOpen(true),
         },
       });
 
