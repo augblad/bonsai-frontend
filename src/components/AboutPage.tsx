@@ -125,7 +125,7 @@ export function AboutPage() {
       </section>
 
       {/* Creators */}
-      <section>
+      <section className="mb-8">
         <h3 className="text-base font-semibold mb-4">Created by</h3>
         <div className="flex flex-col gap-2">
           {creators.map(({ name, github }) => (
@@ -139,6 +139,37 @@ export function AboutPage() {
               <span className="text-xs text-muted-foreground ml-auto">@{github}</span>
             </button>
           ))}
+        </div>
+      </section>
+
+      {/* Third-party licenses */}
+      <section>
+        <h3 className="text-base font-semibold mb-4">Third-party licenses</h3>
+        <div className="flex flex-col gap-2">
+          <div className="p-3 rounded-lg border border-border bg-card">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm font-medium">xdelta3</span>
+              <button
+                onClick={() => window.electronAPI.openExternal("https://github.com/jmacd/xdelta")}
+                className="text-xs text-primary hover:underline"
+              >
+                github.com/jmacd/xdelta
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground mb-1">
+              Copyright &copy; 2001–2016 Josh MacDonald
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Licensed under the{" "}
+              <button
+                onClick={() => window.electronAPI.openExternal("https://www.apache.org/licenses/LICENSE-2.0")}
+                className="text-primary hover:underline"
+              >
+                Apache License, Version 2.0
+              </button>
+              . Used for binary delta encoding and decoding of large creative files.
+            </p>
+          </div>
         </div>
       </section>
       </div>
