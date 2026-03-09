@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import {
   RotateCcw, Trash2, Loader2, FileText, Hash, GitBranch, Calendar,
   ChevronDown, ChevronUp, Pencil, Check, X, Download, Tag, FolderArchive,
-  GitFork,
+  GitFork, Plus,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -28,16 +28,15 @@ import {
   milestoneSetTags,
   milestoneExportZip,
   milestoneSetDescription,
+  projectGetTags,
+  projectSetTags,
 } from "@/lib/api";
-import type { MilestoneRecord } from "@/lib/api";
+import type { MilestoneRecord, TagDefinition } from "@/lib/api";
 import { toast } from "sonner";
 
-const TAG_PALETTE = [
-  { label: "release", color: "#22c55e" },
-  { label: "experiment", color: "#a855f7" },
-  { label: "wip", color: "#f59e0b" },
-  { label: "backup", color: "#3b82f6" },
-  { label: "archived", color: "#6b7280" },
+const TAG_COLOR_OPTIONS = [
+  "#22c55e", "#a855f7", "#f59e0b", "#3b82f6", "#6b7280",
+  "#ef4444", "#ec4899", "#14b8a6", "#f97316", "#8b5cf6",
 ];
 
 interface Props {
@@ -88,6 +87,10 @@ export function MilestonePanel({
   const [exporting, setExporting] = useState(false);
   const [editingDesc, setEditingDesc] = useState(false);
   const [descValue, setDescValue] = useState("");
+  const [projectTags, setProjectTags] = useState<TagDefinition[]>([]);
+  const [creatingTag, setCreatingTag] = useState(false);
+  const [newTagLabel, setNewTagLabel] = useState("");
+  const [newTagColor, setNewTagColor] = useState(TAG_COLOR_OPTIONS[0]);
 
   // Load storage size and tracked files when panel opens
   useEffect(() => {
@@ -96,6 +99,7 @@ export function MilestonePanel({
     setTrackedFiles([]);
     setRenaming(false);
     setEditingDesc(false);
+    setCreatingTag(false);
 
     milestoneStorageSize(projectPath, milestone.milestoneId)
       .then((res) => setStorageBytes(res.totalBytes))
@@ -103,6 +107,10 @@ export function MilestonePanel({
 
     milestoneTrackedFiles(projectPath, milestone.milestoneId)
       .then((files) => setTrackedFiles(files))
+      .catch(() => {});
+
+    projectGetTags(projectPath)
+      .then((tags) => setProjectTags(tags))
       .catch(() => {});
   }, [open, milestone?.milestoneId, projectPath]);
 
@@ -154,6 +162,26 @@ export function MilestonePanel({
       toast.error("Export failed");
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleCreateTag = async () => {
+    const label = newTagLabel.trim();
+    if (!label) return;
+    if (projectTags.some((t) => t.label === label)) {
+      toast.error("Tag already exists");
+      return;
+    }
+    const updated = [...projectTags, { label, color: newTagColor }];
+    const res = await projectSetTags(projectPath, updated);
+    if (res.status === "success") {
+      setProjectTags(updated);
+      setNewTagLabel("");
+      setNewTagColor(TAG_COLOR_OPTIONS[0]);
+      setCreatingTag(false);
+      toast.success("Tag created");
+    } else {
+      toast.error("Failed to create tag");
     }
   };
 
@@ -214,8 +242,8 @@ export function MilestonePanel({
           )}
 
           {/* Tags */}
-          <div className="flex flex-wrap gap-1.5">
-            {TAG_PALETTE.map((tag) => {
+          <div className="flex flex-wrap gap-1.5 items-center">
+            {projectTags.map((tag) => {
               const active = milestone.tags?.includes(tag.label);
               return (
                 <button
@@ -232,7 +260,41 @@ export function MilestonePanel({
                 </button>
               );
             })}
+            {!creatingTag && (
+              <button
+                onClick={() => setCreatingTag(true)}
+                className="px-1.5 py-0.5 rounded-full text-[10px] border border-dashed border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground transition-all flex items-center gap-0.5"
+              >
+                <Plus size={10} /> tag
+              </button>
+            )}
           </div>
+          {creatingTag && (
+            <div className="flex flex-col gap-1.5 p-2 rounded-md border border-border bg-accent/50">
+              <Input
+                value={newTagLabel}
+                onChange={(e) => setNewTagLabel(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleCreateTag(); if (e.key === "Escape") setCreatingTag(false); }}
+                placeholder="Tag name"
+                className="h-7 text-xs"
+                autoFocus
+              />
+              <div className="flex gap-1">
+                {TAG_COLOR_OPTIONS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setNewTagColor(c)}
+                    className={`w-5 h-5 rounded-full border-2 transition-all ${newTagColor === c ? "border-foreground scale-110" : "border-transparent"}`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-1.5">
+                <button onClick={handleCreateTag} className="text-primary hover:text-primary/80"><Check size={14} /></button>
+                <button onClick={() => setCreatingTag(false)} className="text-muted-foreground hover:text-foreground"><X size={14} /></button>
+              </div>
+            </div>
+          )}
 
           {/* Description */}
           <div className="space-y-1">

@@ -1,3 +1,8 @@
+export interface TagDefinition {
+  label: string;
+  color: string;
+}
+
 export interface ProjectSummary {
   id: string;
   name: string;
@@ -357,6 +362,22 @@ export async function blacklistGet(projectPath: string): Promise<string[]> {
 export async function blacklistSet(projectPath: string, items: string[]): Promise<{ status: string }> {
   if (eApi) return eApi.blacklistSet(projectPath, items);
   localStorage.setItem(`bonsai-blacklist-${projectPath}`, JSON.stringify(items));
+  return { status: "success" };
+}
+
+// ── Project Tags ───────────────────────────────────────────
+
+/** Get custom tag definitions for a project. */
+export async function projectGetTags(projectPath: string): Promise<TagDefinition[]> {
+  if (eApi) return eApi.projectGetTags(projectPath);
+  const raw = localStorage.getItem(`bonsai-tags-${projectPath}`);
+  return raw ? JSON.parse(raw) : [];
+}
+
+/** Set custom tag definitions for a project. */
+export async function projectSetTags(projectPath: string, tags: TagDefinition[]): Promise<{ status: string }> {
+  if (eApi) return eApi.projectSetTags(projectPath, tags);
+  localStorage.setItem(`bonsai-tags-${projectPath}`, JSON.stringify(tags));
   return { status: "success" };
 }
 

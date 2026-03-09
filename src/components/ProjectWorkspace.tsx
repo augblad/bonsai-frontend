@@ -30,9 +30,11 @@ import {
   projectStorageStats,
   settingsGet,
   onAutoWatchMilestoneCreated,
+  projectGetTags,
   type TreeNode,
   type MilestoneRecord,
   type ProjectTreeResponse,
+  type TagDefinition,
 } from "@/lib/api";
 import { MilestoneNode, BRANCH_COLOR_PALETTE } from "@/components/MilestoneNode";
 import { MilestonePanel } from "@/components/MilestonePanel";
@@ -214,6 +216,7 @@ function ProjectWorkspaceInner() {
   const [milestoneTemplate, setMilestoneTemplate] = useState("");
 
   const [projectName, setProjectName] = useState("Project");
+  const [projectTags, setProjectTags] = useState<TagDefinition[]>([]);
 
   // Load branch colors and minimap settings
   useEffect(() => {
@@ -242,6 +245,13 @@ function ProjectWorkspaceInner() {
     return map;
   }, [branchColorsEnabled, treeData]);
 
+  // Compute tag→color map from project tags
+  const tagColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const t of projectTags) map[t.label] = t.color;
+    return map;
+  }, [projectTags]);
+
   // Fetch actual project name from project list
   useEffect(() => {
     projectList().then((projects) => {
@@ -255,6 +265,7 @@ function ProjectWorkspaceInner() {
     setLoading(true);
     const data = await projectTree(decodedPath);
     setTreeData(data);
+    projectGetTags(decodedPath).then((tags) => setProjectTags(tags)).catch(() => {});
     setLoading(false);
   }, [decodedPath]);
 
@@ -307,6 +318,7 @@ function ProjectWorkspaceInner() {
           tags: node.tags,
           branchColor: color,
           isVertical,
+          tagColorMap,
           onCreateMilestone: () => openCreateDialog(),
         },
       });

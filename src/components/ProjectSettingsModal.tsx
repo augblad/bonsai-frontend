@@ -5,9 +5,16 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { autoWatchStart, autoWatchStop, autoWatchStatus, blacklistGet, blacklistSet, openDirectory, openFile, settingsGet, settingsSet } from "@/lib/api";
+import { autoWatchStart, autoWatchStop, autoWatchStatus, blacklistGet, blacklistSet, openDirectory, openFile, settingsGet, settingsSet, projectGetTags, projectSetTags } from "@/lib/api";
+import type { TagDefinition } from "@/lib/api";
 import { toast } from "sonner";
-import { Trash2, FilePlus, FolderPlus, File, Folder } from "lucide-react";
+import { Trash2, FilePlus, FolderPlus, File, Folder, Plus, Check, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+
+const TAG_COLOR_OPTIONS = [
+  "#22c55e", "#a855f7", "#f59e0b", "#3b82f6", "#6b7280",
+  "#ef4444", "#ec4899", "#14b8a6", "#f97316", "#8b5cf6",
+];
 
 interface Props {
   open: boolean;
@@ -21,6 +28,10 @@ export function ProjectSettingsModal({ open, onOpenChange, projectName, projectP
   const [loading, setLoading] = useState(true);
   const [blacklist, setBlacklist] = useState<string[]>([]);
   const [debounceMs, setDebounceMs] = useState(10000);
+  const [projectTags, setProjectTags] = useState<TagDefinition[]>([]);
+  const [creatingTag, setCreatingTag] = useState(false);
+  const [newTagLabel, setNewTagLabel] = useState("");
+  const [newTagColor, setNewTagColor] = useState(TAG_COLOR_OPTIONS[0]);
 
   // Fetch current status when the modal opens
   useEffect(() => {
@@ -33,6 +44,7 @@ export function ProjectSettingsModal({ open, onOpenChange, projectName, projectP
       settingsGet("autoWatchDebounceMs").then((val) => {
         if (typeof val === "number") setDebounceMs(val);
       }),
+      projectGetTags(projectPath).then((tags) => setProjectTags(tags)),
     ])
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -61,6 +73,37 @@ export function ProjectSettingsModal({ open, onOpenChange, projectName, projectP
       await settingsSet("autoWatchDebounceMs", ms);
     } catch {
       toast.error("Failed to save debounce setting");
+    }
+  };
+
+  const handleCreateTag = async () => {
+    const label = newTagLabel.trim();
+    if (!label) return;
+    if (projectTags.some((t) => t.label === label)) {
+      toast.error("Tag already exists");
+      return;
+    }
+    const updated = [...projectTags, { label, color: newTagColor }];
+    try {
+      await projectSetTags(projectPath, updated);
+      setProjectTags(updated);
+      setNewTagLabel("");
+      setNewTagColor(TAG_COLOR_OPTIONS[0]);
+      setCreatingTag(false);
+      toast.success("Tag created");
+    } catch {
+      toast.error("Failed to create tag");
+    }
+  };
+
+  const handleDeleteTag = async (label: string) => {
+    const updated = projectTags.filter((t) => t.label !== label);
+    try {
+      await projectSetTags(projectPath, updated);
+      setProjectTags(updated);
+      toast.success("Tag removed");
+    } catch {
+      toast.error("Failed to remove tag");
     }
   };
 
@@ -231,6 +274,79 @@ export function ProjectSettingsModal({ open, onOpenChange, projectName, projectP
 
             {blacklist.length === 0 && !loading && (
               <p className="mt-3 text-xs text-muted-foreground italic">No items blacklisted.</p>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Tags section */}
+          <div>
+            <Label className="text-sm font-medium">Tags</Label>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Custom tags that can be assigned to milestones in this project.
+            </p>
+
+            {projectTags.length > 0 && (
+              <div className="mt-3 space-y-1">
+                {projectTags.map((tag) => (
+                  <div
+                    key={tag.label}
+                    className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted/50 group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-3 h-3 rounded-full shrink-0"
+                        style={{ backgroundColor: tag.color }}
+                      />
+                      <span>{tag.label}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => handleDeleteTag(tag.label)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {projectTags.length === 0 && !loading && (
+              <p className="mt-3 text-xs text-muted-foreground italic">No tags defined. Create one below.</p>
+            )}
+
+            {creatingTag ? (
+              <div className="mt-3 flex flex-col gap-1.5 p-2 rounded-md border border-border bg-accent/50">
+                <Input
+                  value={newTagLabel}
+                  onChange={(e) => setNewTagLabel(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleCreateTag(); if (e.key === "Escape") setCreatingTag(false); }}
+                  placeholder="Tag name"
+                  className="h-7 text-xs"
+                  autoFocus
+                />
+                <div className="flex gap-1">
+                  {TAG_COLOR_OPTIONS.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => setNewTagColor(c)}
+                      className={`w-5 h-5 rounded-full border-2 transition-all ${newTagColor === c ? "border-foreground scale-110" : "border-transparent"}`}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+                <div className="flex gap-1.5">
+                  <button onClick={handleCreateTag} className="text-primary hover:text-primary/80"><Check size={14} /></button>
+                  <button onClick={() => setCreatingTag(false)} className="text-muted-foreground hover:text-foreground"><X size={14} /></button>
+                </div>
+              </div>
+            ) : (
+              <Button variant="outline" size="sm" className="mt-3" onClick={() => setCreatingTag(true)} disabled={loading}>
+                <Plus className="h-4 w-4 mr-1.5" />
+                Add Tag
+              </Button>
             )}
           </div>
         </div>

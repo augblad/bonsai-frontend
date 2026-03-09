@@ -22,14 +22,6 @@ export const BRANCH_COLOR_PALETTE = [
   "#14b8a6", // teal
 ];
 
-const TAG_COLORS: Record<string, string> = {
-  release: "#22c55e",
-  experiment: "#a855f7",
-  wip: "#f59e0b",
-  backup: "#3b82f6",
-  archived: "#6b7280",
-};
-
 interface MilestoneNodeData {
   label: string;
   message: string;
@@ -42,6 +34,7 @@ interface MilestoneNodeData {
   tags?: string[];
   branchColor?: string | null;
   isVertical?: boolean;
+  tagColorMap?: Record<string, string>;
   onCreateMilestone?: () => void;
 }
 
@@ -127,7 +120,7 @@ function MilestoneNodeComponent({ data, selected }: NodeProps) {
               <span
                 key={tag}
                 className="px-1.5 py-px rounded-full text-[9px] font-medium text-white"
-                style={{ backgroundColor: TAG_COLORS[tag] || "#6b7280" }}
+                style={{ backgroundColor: d.tagColorMap?.[tag] || "#6b7280" }}
               >
                 {tag}
               </span>
