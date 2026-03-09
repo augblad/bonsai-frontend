@@ -129,17 +129,15 @@ export function AboutPage() {
         <h3 className="text-base font-semibold mb-4">Created by</h3>
         <div className="flex flex-col gap-2">
           {creators.map(({ name, github }) => (
-            <a
+            <button
               key={github}
-              href={`https://github.com/${github}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-accent transition-colors group"
+              onClick={() => window.electronAPI.openExternal(`https://github.com/${github}`)}
+              className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-accent transition-colors group w-full text-left"
             >
               <IconBrandGithub size={18} strokeWidth={1.5} className="text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
               <span className="text-sm font-medium">{name}</span>
               <span className="text-xs text-muted-foreground ml-auto">@{github}</span>
-            </a>
+            </button>
           ))}
         </div>
       </section>

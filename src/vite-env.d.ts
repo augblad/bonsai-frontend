@@ -3,6 +3,7 @@
 interface Window {
   electronAPI: {
     platform: string;
+    openExternal: (url: string) => Promise<void>;
     projectCreate: (projectPath: string, name: string) => Promise<unknown>;
     projectDelete: (projectPath: string) => Promise<unknown>;
     projectList: () => Promise<unknown>;
