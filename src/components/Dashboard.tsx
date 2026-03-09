@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
-import { MoreHorizontal, Trash2, Folder, Clock, GitBranch, Pencil } from "lucide-react";
+import { MoreHorizontal, Trash2, Folder, Clock, GitBranch, Pencil, Search, ArrowUpDown } from "lucide-react";
 import { projectList, projectDelete, projectRename, autoWatchStatus, type ProjectSummary } from "@/lib/api";
 import {
   ContextMenu,
@@ -29,8 +29,17 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+
+type SortKey = "name" | "lastModified" | "milestones" | "created";
 
 export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
@@ -39,6 +48,8 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
   const [renameTarget, setRenameTarget] = useState<ProjectSummary | null>(null);
   const [newName, setNewName] = useState("");
   const [watchedPaths, setWatchedPaths] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortKey>("lastModified");
   const navigate = useNavigate();
 
   const load = async () => {
@@ -60,6 +71,42 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
   };
 
   useEffect(() => { load(); }, []);
+
+  const filteredAndSorted = useMemo(() => {
+    let result = [...projects];
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.projectPath.toLowerCase().includes(q) ||
+          (p.lastMilestoneMessage && p.lastMilestoneMessage.toLowerCase().includes(q))
+      );
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "lastModified": {
+          const aTime = a.lastMilestoneAt ? new Date(a.lastMilestoneAt).getTime() : 0;
+          const bTime = b.lastMilestoneAt ? new Date(b.lastMilestoneAt).getTime() : 0;
+          return bTime - aTime; // newest first
+        }
+        case "milestones":
+          return b.milestoneCount - a.milestoneCount; // most first
+        case "created":
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        default:
+          return 0;
+      }
+    });
+
+    return result;
+  }, [projects, searchQuery, sortBy]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -117,8 +164,37 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
         <h1 className="text-2xl font-semibold">Projects</h1>
         <Button onClick={onNewProject} size="sm">New Project</Button>
       </div>
+
+      {/* Search & Sort controls */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="relative flex-1 max-w-xs">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="pl-8 h-8 text-xs"
+            placeholder="Search projects..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
+          <SelectTrigger className="w-40 h-8 text-xs">
+            <ArrowUpDown size={12} className="mr-1.5" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="lastModified">Last modified</SelectItem>
+            <SelectItem value="name">Name</SelectItem>
+            <SelectItem value="milestones">Milestones</SelectItem>
+            <SelectItem value="created">Created</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {filteredAndSorted.length === 0 && searchQuery.trim() ? (
+        <p className="text-sm text-muted-foreground text-center py-12">No projects match "{searchQuery}"</p>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {projects.map((project, i) => (
+        {filteredAndSorted.map((project, i) => (
           <ContextMenu key={project.id}>
             <ContextMenuTrigger>
               <motion.div
@@ -178,6 +254,7 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
           </ContextMenu>
         ))}
       </div>
+      )}
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent>

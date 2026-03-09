@@ -27,6 +27,7 @@ import {
   milestoneRename,
   milestoneSetTags,
   milestoneExportZip,
+  milestoneSetDescription,
 } from "@/lib/api";
 import type { MilestoneRecord } from "@/lib/api";
 import { toast } from "sonner";
@@ -85,6 +86,8 @@ export function MilestonePanel({
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [editingDesc, setEditingDesc] = useState(false);
+  const [descValue, setDescValue] = useState("");
 
   // Load storage size and tracked files when panel opens
   useEffect(() => {
@@ -92,6 +95,7 @@ export function MilestonePanel({
     setStorageBytes(null);
     setTrackedFiles([]);
     setRenaming(false);
+    setEditingDesc(false);
 
     milestoneStorageSize(projectPath, milestone.milestoneId)
       .then((res) => setStorageBytes(res.totalBytes))
@@ -153,6 +157,27 @@ export function MilestonePanel({
     }
   };
 
+  const handleDescEdit = () => {
+    setDescValue(milestone.description || "");
+    setEditingDesc(true);
+  };
+
+  const handleDescConfirm = async () => {
+    const trimmed = descValue.trim();
+    if (trimmed === (milestone.description || "")) {
+      setEditingDesc(false);
+      return;
+    }
+    const res = await milestoneSetDescription(projectPath, milestone.milestoneId, trimmed);
+    if (res.status === "success") {
+      toast.success(trimmed ? "Description updated" : "Description removed");
+      onMilestoneUpdated();
+    } else {
+      toast.error("Failed to update description");
+    }
+    setEditingDesc(false);
+  };
+
   const patchSize = storageBytes !== null ? formatBytes(storageBytes) : "…";
 
   return (
@@ -207,6 +232,38 @@ export function MilestonePanel({
                 </button>
               );
             })}
+          </div>
+
+          {/* Description */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Description</p>
+              {!editingDesc && (
+                <button onClick={handleDescEdit} className="text-muted-foreground hover:text-foreground transition-colors">
+                  <Pencil size={10} />
+                </button>
+              )}
+            </div>
+            {editingDesc ? (
+              <div className="space-y-1.5">
+                <textarea
+                  value={descValue}
+                  onChange={(e) => setDescValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Escape") setEditingDesc(false); }}
+                  className="w-full text-sm bg-accent rounded px-2 py-1.5 border border-border resize-none min-h-[60px] focus:outline-none focus:ring-1 focus:ring-primary"
+                  placeholder="Add a description..."
+                  autoFocus
+                />
+                <div className="flex gap-1.5">
+                  <button onClick={handleDescConfirm} className="text-primary hover:text-primary/80"><Check size={14} /></button>
+                  <button onClick={() => setEditingDesc(false)} className="text-muted-foreground hover:text-foreground"><X size={14} /></button>
+                </div>
+              </div>
+            ) : (
+              <p className={`text-sm ${milestone.description ? "" : "text-muted-foreground italic"}`}>
+                {milestone.description || "No description"}
+              </p>
+            )}
           </div>
 
           <DetailRow icon={Calendar} label="Created" value={format(new Date(milestone.createdAt), "PPpp")} />

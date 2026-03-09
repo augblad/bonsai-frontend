@@ -11,6 +11,7 @@ export interface ProjectSummary {
 export interface TreeNode {
   milestoneId: string;
   message: string;
+  description?: string;
   commitHash: string;
   branch: string;
   createdAt: string;
@@ -21,6 +22,7 @@ export interface TreeNode {
 export interface MilestoneRecord {
   milestoneId: string;
   message: string;
+  description?: string;
   commitHash: string;
   branch: string;
   parentMilestoneId: string | null;
@@ -203,14 +205,14 @@ export async function projectTree(_projectPath: string): Promise<ProjectTreeResp
   return JSON.parse(JSON.stringify(mockTreeResponse));
 }
 
-export async function milestoneCreateInitial(projectPath: string, message: string): Promise<{ milestoneId: string }> {
-  if (eApi) return eApi.milestoneCreateInitial(projectPath, message);
+export async function milestoneCreateInitial(projectPath: string, message: string, description?: string): Promise<{ milestoneId: string }> {
+  if (eApi) return eApi.milestoneCreateInitial(projectPath, message, description);
   await delay();
   return { milestoneId: `ms-new-${Date.now()}` };
 }
 
-export async function milestoneCreate(_projectPath: string, _message: string): Promise<{ milestoneId: string; error?: string }> {
-  if (eApi) return eApi.milestoneCreate(_projectPath, _message);
+export async function milestoneCreate(_projectPath: string, _message: string, _description?: string): Promise<{ milestoneId: string; error?: string }> {
+  if (eApi) return eApi.milestoneCreate(_projectPath, _message, _description);
   await delay(2000);
   if (mockTreeResponse.milestones.some((m) => m.message.toLowerCase() === _message.toLowerCase())) {
     return { milestoneId: "", error: "duplicate_name" };
@@ -395,6 +397,12 @@ export async function milestoneRename(projectPath: string, milestoneId: string, 
 /** Set tags on a milestone. */
 export async function milestoneSetTags(projectPath: string, milestoneId: string, tags: string[]): Promise<{ status: string }> {
   if (eApi) return eApi.milestoneSetTags(projectPath, milestoneId, tags);
+  return { status: "success" };
+}
+
+/** Set description on a milestone. */
+export async function milestoneSetDescription(projectPath: string, milestoneId: string, description: string): Promise<{ status: string }> {
+  if (eApi) return eApi.milestoneSetDescription(projectPath, milestoneId, description);
   return { status: "success" };
 }
 

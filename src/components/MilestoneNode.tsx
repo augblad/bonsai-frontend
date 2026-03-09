@@ -41,6 +41,7 @@ interface MilestoneNodeData {
   hasParent: boolean;
   tags?: string[];
   branchColor?: string | null;
+  isVertical?: boolean;
   onCreateMilestone?: () => void;
 }
 
@@ -48,36 +49,62 @@ function MilestoneNodeComponent({ data, selected }: NodeProps) {
   const d = data as unknown as MilestoneNodeData;
   const [isHovered, setIsHovered] = useState(false);
   const bc = d.branchColor;
+  const targetPos = d.isVertical ? Position.Top : Position.Left;
+  const sourcePos = d.isVertical ? Position.Bottom : Position.Right;
 
   // Use only longhand border-*-color properties to avoid shorthand conflicts.
-  // borderColor shorthand would clobber borderLeftColor, so we never use it.
+  // borderColor shorthand would clobber the accent border, so we never use it.
+  // Accent border: top edge in vertical layout, left edge in horizontal layout.
   const dynamicStyle: React.CSSProperties = {};
   if (bc) {
-    dynamicStyle.borderLeftWidth = 3;
-    dynamicStyle.borderLeftColor = bc;
+    if (d.isVertical) {
+      dynamicStyle.borderTopWidth = 3;
+      dynamicStyle.borderTopColor = bc;
+    } else {
+      dynamicStyle.borderLeftWidth = 3;
+      dynamicStyle.borderLeftColor = bc;
+    }
 
     if (d.isActive) {
-      dynamicStyle.borderTopColor = bc;
-      dynamicStyle.borderRightColor = bc;
-      dynamicStyle.borderBottomColor = bc;
+      if (d.isVertical) {
+        dynamicStyle.borderLeftColor = bc;
+        dynamicStyle.borderRightColor = bc;
+        dynamicStyle.borderBottomColor = bc;
+      } else {
+        dynamicStyle.borderTopColor = bc;
+        dynamicStyle.borderRightColor = bc;
+        dynamicStyle.borderBottomColor = bc;
+      }
       (dynamicStyle as Record<string, unknown>)["--tw-ring-color"] = hexToRgba(bc, 0.8);
       (dynamicStyle as Record<string, unknown>)["--glow-color-low"] = hexToRgba(bc, 0.4);
       (dynamicStyle as Record<string, unknown>)["--glow-color-high"] = hexToRgba(bc, 0.6);
     } else if (selected) {
-      dynamicStyle.borderTopColor = bc;
-      dynamicStyle.borderRightColor = bc;
-      dynamicStyle.borderBottomColor = bc;
+      if (d.isVertical) {
+        dynamicStyle.borderLeftColor = bc;
+        dynamicStyle.borderRightColor = bc;
+        dynamicStyle.borderBottomColor = bc;
+      } else {
+        dynamicStyle.borderTopColor = bc;
+        dynamicStyle.borderRightColor = bc;
+        dynamicStyle.borderBottomColor = bc;
+      }
     } else if (isHovered) {
       const hoverColor = hexToRgba(bc, 0.5);
-      dynamicStyle.borderTopColor = hoverColor;
-      dynamicStyle.borderRightColor = hoverColor;
-      dynamicStyle.borderBottomColor = hoverColor;
+      if (d.isVertical) {
+        dynamicStyle.borderLeftColor = hoverColor;
+        dynamicStyle.borderRightColor = hoverColor;
+        dynamicStyle.borderBottomColor = hoverColor;
+      } else {
+        dynamicStyle.borderTopColor = hoverColor;
+        dynamicStyle.borderRightColor = hoverColor;
+        dynamicStyle.borderBottomColor = hoverColor;
+      }
     }
   }
 
   return (
     <div className="relative">
-      {d.hasParent && <Handle type="target" position={Position.Left} className="!w-2 !h-2 !bg-muted-foreground !border-none" isConnectable={false} />}
+      {d.hasParent && <Handle type="target" position={targetPos} className="!w-2 !h-2 !bg-muted-foreground !border-none" isConnectable={false} />}
       <div
         className={cn(
           "px-4 py-3 rounded-xl border bg-node-bg border-node-border min-w-[180px] max-w-[240px] transition-all cursor-pointer select-none",
@@ -108,10 +135,15 @@ function MilestoneNodeComponent({ data, selected }: NodeProps) {
           </div>
         )}
       </div>
-      {d.hasChildren && <Handle type="source" position={Position.Right} className="!w-2 !h-2 !bg-muted-foreground !border-none" isConnectable={false} />}
+      {d.hasChildren && <Handle type="source" position={sourcePos} className="!w-2 !h-2 !bg-muted-foreground !border-none" isConnectable={false} />}
       {d.isActive && d.onCreateMilestone && (
         <button
-          className="nodrag absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md transition-all z-10 cursor-pointer hover:brightness-75"
+          className={cn(
+            "nodrag absolute w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md transition-all z-10 cursor-pointer hover:brightness-75",
+            d.isVertical
+              ? "bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2"
+              : "right-0 top-1/2 translate-x-1/2 -translate-y-1/2"
+          )}
           onClick={(e) => {
             e.stopPropagation();
             d.onCreateMilestone!();

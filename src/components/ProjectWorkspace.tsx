@@ -39,6 +39,7 @@ import { MilestonePanel } from "@/components/MilestonePanel";
 import { ProjectSettingsModal } from "@/components/ProjectSettingsModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import {
   Dialog,
   DialogContent,
@@ -185,6 +186,7 @@ function ProjectWorkspaceInner() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [createMsg, setCreateMsg] = useState("");
+  const [createDesc, setCreateDesc] = useState("");
   const [creating, setCreating] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -206,6 +208,10 @@ function ProjectWorkspaceInner() {
   const [branchColorsEnabled, setBranchColorsEnabled] = useState(false);
   // Minimap setting
   const [minimapEnabled, setMinimapEnabled] = useState(false);
+  // Canvas direction setting
+  const [canvasDirection, setCanvasDirection] = useState<"horizontal" | "vertical">("horizontal");
+  // Milestone name template
+  const [milestoneTemplate, setMilestoneTemplate] = useState("");
 
   const [projectName, setProjectName] = useState("Project");
 
@@ -216,6 +222,12 @@ function ProjectWorkspaceInner() {
     });
     settingsGet("minimapEnabled").then((val) => {
       if (typeof val === "boolean") setMinimapEnabled(val);
+    });
+    settingsGet("canvasDirection").then((val) => {
+      if (val === "horizontal" || val === "vertical") setCanvasDirection(val);
+    });
+    settingsGet("milestoneNameTemplate").then((val) => {
+      if (typeof val === "string") setMilestoneTemplate(val);
     });
   }, []);
 
@@ -264,15 +276,18 @@ function ProjectWorkspaceInner() {
   const buildLayout = useCallback((data: ProjectTreeResponse, useSaved: boolean) => {
     const newNodes: Node[] = [];
     const newEdges: Edge[] = [];
-    const Y_GAP = 100;
-    const X_GAP = 300;
+    const isVertical = canvasDirection === "vertical";
+    const Y_GAP = isVertical ? 140 : 100;
+    const X_GAP = isVertical ? 220 : 300;
 
     const saved = useSaved ? loadPositions(decodedPath) : null;
 
     let yCounter = 0;
 
     const traverse = (node: TreeNode, depth: number, parentId?: string) => {
-      const defaultPos = { x: depth * X_GAP, y: yCounter * Y_GAP };
+      const defaultPos = isVertical
+        ? { x: yCounter * X_GAP, y: depth * Y_GAP }
+        : { x: depth * X_GAP, y: yCounter * Y_GAP };
       const position = saved?.[node.milestoneId] ?? defaultPos;
       const color = branchColorMap.get(node.branch) || null;
 
@@ -291,7 +306,8 @@ function ProjectWorkspaceInner() {
           hasParent: !!parentId,
           tags: node.tags,
           branchColor: color,
-          onCreateMilestone: () => setCreateOpen(true),
+          isVertical,
+          onCreateMilestone: () => openCreateDialog(),
         },
       });
 
@@ -318,7 +334,7 @@ function ProjectWorkspaceInner() {
 
     data.tree.forEach((root) => traverse(root, 0));
     return { newNodes, newEdges };
-  }, [decodedPath, branchColorMap]);
+  }, [decodedPath, branchColorMap, canvasDirection]);
 
   // Convert tree to React Flow nodes/edges
   useEffect(() => {
@@ -389,12 +405,13 @@ function ProjectWorkspaceInner() {
     if (!createMsg.trim()) return;
     setCreating(true);
     try {
-      const res = await milestoneCreate(decodedPath, createMsg);
+      const res = await milestoneCreate(decodedPath, createMsg, createDesc.trim() || undefined);
       if (res.error === "duplicate_name") {
         toast.error("A milestone with this name already exists in this project");
       } else {
         toast.success("Milestone created");
         setCreateMsg("");
+        setCreateDesc("");
         setCreateOpen(false);
         loadTree();
       }
@@ -451,7 +468,7 @@ function ProjectWorkspaceInner() {
       }
       // Then open the create dialog for the new branch milestone
       setPanelOpen(false);
-      setCreateOpen(true);
+      openCreateDialog();
       loadTree();
     } catch {
       toast.error("Branch failed");
@@ -503,17 +520,51 @@ function ProjectWorkspaceInner() {
     }
   };
 
-  // Keyboard shortcut: Ctrl+M to create milestone
+  /** Expand the milestone name template and open the dialog. */
+  const openCreateDialog = useCallback(() => {
+    if (milestoneTemplate) {
+      const count = treeData ? treeData.milestones.length + 1 : 1;
+      const expanded = milestoneTemplate
+        .replace(/\{\{n\}\}/g, String(count))
+        .replace(/\{\{date\}\}/g, new Date().toLocaleDateString());
+      setCreateMsg(expanded);
+    }
+    setCreateOpen(true);
+  }, [milestoneTemplate, treeData]);
+
+  // Keyboard shortcuts panel
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Ignore when typing in an input/textarea
+      const tag = (e.target as HTMLElement)?.tagName;
+      const isInput = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
+
       if ((e.ctrlKey || e.metaKey) && e.key === "m") {
         e.preventDefault();
-        setCreateOpen(true);
+        openCreateDialog();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "f") {
+        e.preventDefault();
+        setSearchVisible(true);
+        return;
+      }
+      if (e.key === "Escape") {
+        if (searchVisible) { setSearchVisible(false); setSearchQuery(""); }
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "h" && !isInput) {
+        e.preventDefault();
+        setShortcutsOpen(true);
+        return;
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [openCreateDialog, searchVisible]);
 
   const activeName = treeData?.milestones.find(
     (m) => m.milestoneId === treeData.activeMilestoneId
@@ -584,7 +635,7 @@ function ProjectWorkspaceInner() {
         >
           <Settings size={16} strokeWidth={1.5} />
         </button>
-        <Button size="sm" onClick={() => setCreateOpen(true)}>
+        <Button size="sm" onClick={openCreateDialog}>
           <Plus size={16} className="mr-1.5" strokeWidth={2} />
           Create Milestone
         </Button>
@@ -664,15 +715,27 @@ function ProjectWorkspaceInner() {
           <DialogHeader>
             <DialogTitle>Create Milestone</DialogTitle>
           </DialogHeader>
-          <div className="py-2 space-y-2">
-            <Label htmlFor="milestone-msg">Message</Label>
-            <Input
-              id="milestone-msg"
-              placeholder="Describe this snapshot..."
-              value={createMsg}
-              onChange={(e) => setCreateMsg(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !creating && handleCreate()}
-            />
+          <div className="py-2 space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="milestone-msg">Message</Label>
+              <Input
+                id="milestone-msg"
+                placeholder="Describe this snapshot..."
+                value={createMsg}
+                onChange={(e) => setCreateMsg(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !creating && handleCreate()}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="milestone-desc">Description <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <textarea
+                id="milestone-desc"
+                className="w-full text-sm bg-background rounded-md px-3 py-2 border border-input resize-none min-h-[60px] focus:outline-none focus:ring-1 focus:ring-ring"
+                placeholder="Add more detail about what changed..."
+                value={createDesc}
+                onChange={(e) => setCreateDesc(e.target.value)}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={creating}>
@@ -752,6 +815,35 @@ function ProjectWorkspaceInner() {
               <Loader2 size={20} className="animate-spin text-muted-foreground" />
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Keyboard Shortcuts Panel */}
+      <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Keyboard Shortcuts</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            {([
+              { keys: ["Ctrl", "M"], desc: "Create new milestone" },
+              { keys: ["Ctrl", "F"], desc: "Search milestones" },
+              { keys: ["Escape"], desc: "Close search / panels" },
+              { keys: ["Ctrl", "H"], desc: "Show this shortcut panel" },
+            ] as { keys: string[]; desc: string }[]).map(({ keys, desc }) => (
+              <div key={desc} className="flex items-center justify-between py-1">
+                <span className="text-muted-foreground">{desc}</span>
+                <KbdGroup>
+                  {keys.map((k, i) => (
+                    <span key={i} className="inline-flex items-center gap-1">
+                      {i > 0 && <span className="text-muted-foreground text-xs">+</span>}
+                      <Kbd>{k}</Kbd>
+                    </span>
+                  ))}
+                </KbdGroup>
+              </div>
+            ))}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
