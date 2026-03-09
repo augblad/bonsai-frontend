@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Plus, Settings } from "lucide-react";
+import { Home, Plus, Settings, Info } from "lucide-react";
 import { IconLeafFilled } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -58,6 +58,24 @@ export function AppSidebar({ onNewProject }: { onNewProject: () => void }) {
       </Tooltip>
 
       <div className="flex-1" />
+
+      {/* About */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => navigate("/about")}
+            className={cn(
+              "w-9 h-9 flex items-center justify-center rounded-lg transition-colors",
+              location.pathname === "/about"
+                ? "bg-accent text-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+            )}
+          >
+            <Info size={20} strokeWidth={1.5} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="right">About</TooltipContent>
+      </Tooltip>
 
       {/* Settings */}
       <Tooltip>

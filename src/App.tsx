@@ -9,6 +9,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { Dashboard } from "@/components/Dashboard";
 import { ProjectWorkspace } from "@/components/ProjectWorkspace";
 import { SettingsPage } from "@/components/SettingsPage";
+import { AboutPage } from "@/components/AboutPage";
 import { CreateProjectModal } from "@/components/CreateProjectModal";
 import NotFound from "@/pages/NotFound";
 
@@ -47,6 +48,7 @@ const App = () => {
                   />
                   <Route path="/project/:projectPath" element={<ProjectWorkspace />} />
                   <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/about" element={<AboutPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
