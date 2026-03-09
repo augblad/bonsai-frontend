@@ -30,9 +30,9 @@ const App = () => {
           <Toaster />
           <Sonner />
           <HashRouter>
-            <div className="flex min-h-screen w-full bg-background">
+            <div className="flex h-screen w-full bg-background overflow-hidden">
               <AppSidebar onNewProject={() => setCreateOpen(true)} />
-              <main className="flex-1 flex flex-col min-h-0">
+              <main className="flex-1 flex flex-col min-h-0 overflow-auto">
                 {window.electronAPI.platform === 'darwin' && (
                   <div className="h-8 w-full shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties} />
                 )}

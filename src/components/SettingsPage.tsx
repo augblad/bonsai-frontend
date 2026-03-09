@@ -19,8 +19,8 @@ const TAG_COLOR_OPTIONS = [
 export function SettingsPage() {
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
-  const [branchColors, setBranchColors] = useState(false);
-  const [minimapEnabled, setMinimapEnabled] = useState(false);
+  const [branchColors, setBranchColors] = useState(true);
+  const [minimapEnabled, setMinimapEnabled] = useState(true);
   const [defaultDebounceMs, setDefaultDebounceMs] = useState(10000);
   const [milestoneTemplate, setMilestoneTemplate] = useState("");
   const [canvasDirection, setCanvasDirection] = useState<"horizontal" | "vertical">("horizontal");
@@ -101,17 +101,21 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="p-8 max-w-lg">
-      <button
-        onClick={() => navigate("/")}
-        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
-      >
-        <ArrowLeft size={16} strokeWidth={1.5} />
-        Back
-      </button>
-      <h1 className="text-2xl font-semibold mb-6">Settings</h1>
+    <div className="flex flex-col min-h-full max-w-lg">
+      {/* Sticky header */}
+      <div className="sticky top-0 bg-background z-10 pt-8 px-8 pb-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          >
+            <ArrowLeft size={18} strokeWidth={1.5} />
+          </button>
+          <h1 className="text-xl font-semibold">Settings</h1>
+        </div>
+      </div>
 
-      <div className="space-y-6">
+      <div className="px-8 pb-8 space-y-6">
         {/* Theme */}
         <div className="flex items-center justify-between py-3 border-b border-border">
           <div>

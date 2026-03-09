@@ -46,9 +46,9 @@ export function AboutPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col min-h-full p-8 max-w-3xl mx-auto w-full">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
+    <div className="flex flex-col min-h-full max-w-3xl mx-auto w-full">
+      {/* Sticky header */}
+      <div className="sticky top-0 bg-background z-10 pt-8 px-8 pb-4 flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
           className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
@@ -58,6 +58,7 @@ export function AboutPage() {
         <h1 className="text-xl font-semibold">About</h1>
       </div>
 
+      <div className="px-8 pb-8">
       {/* App identity */}
       <div className="flex items-center gap-4 mb-6">
         <div className="w-14 h-14 flex items-center justify-center rounded-xl bg-primary text-primary-foreground shrink-0">
@@ -142,6 +143,7 @@ export function AboutPage() {
           ))}
         </div>
       </section>
+      </div>
     </div>
   );
 }

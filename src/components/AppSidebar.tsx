@@ -14,7 +14,7 @@ export function AppSidebar({ onNewProject }: { onNewProject: () => void }) {
   const location = useLocation();
 
   return (
-    <aside className="flex flex-col items-center w-14 min-h-screen border-r border-border bg-card pt-2 pb-4 gap-2">
+    <aside className="flex flex-col items-center w-14 h-full border-r border-border bg-card pt-2 pb-4 gap-2">
       {/* Drag region — macOS only (hiddenInset titlebar) */}
       {window.electronAPI.platform === 'darwin' && (
         <div className="w-full h-6 shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties} />
