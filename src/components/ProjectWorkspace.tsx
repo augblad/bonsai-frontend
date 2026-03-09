@@ -19,7 +19,7 @@ import {
   type NodeMouseHandler,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { ArrowLeft, Plus, Settings, Loader2, RotateCcw, Search, BarChart3 } from "lucide-react";
+import { ArrowLeft, Plus, Settings, Loader2, RotateCcw, BarChart3, Network, CalendarDays, SlidersHorizontal } from "lucide-react";
 import {
   projectTree,
   projectList,
@@ -38,6 +38,8 @@ import {
 } from "@/lib/api";
 import { MilestoneNode, BRANCH_COLOR_PALETTE } from "@/components/MilestoneNode";
 import { MilestonePanel } from "@/components/MilestonePanel";
+import { TimelineView } from "@/components/TimelineView";
+import { AdvancedSearch, applyFilters, hasActiveFilters, EMPTY_FILTERS, type SearchFilters } from "@/components/AdvancedSearch";
 import { ProjectSettingsModal } from "@/components/ProjectSettingsModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,6 +63,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const nodeTypes = { milestone: MilestoneNode };
@@ -199,8 +202,11 @@ function ProjectWorkspaceInner() {
   const [confirmBranchOpen, setConfirmBranchOpen] = useState(false);
 
   // Search & filter
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchFilters, setSearchFilters] = useState<SearchFilters>(EMPTY_FILTERS);
   const [searchVisible, setSearchVisible] = useState(false);
+
+  // View mode: "graph" or "timeline"
+  const [viewMode, setViewMode] = useState<"graph" | "timeline">("graph");
 
   // Storage stats
   const [statsOpen, setStatsOpen] = useState(false);
@@ -371,21 +377,21 @@ function ProjectWorkspaceInner() {
     return { newNodes, newEdges };
   }, [decodedPath, branchColorMap, canvasDirection, tagColorMap]);
 
+  // Compute filtered milestone IDs from advanced search
+  const filteredIds = useMemo(() => {
+    if (!treeData) return null;
+    return applyFilters(treeData.milestones, searchFilters);
+  }, [treeData, searchFilters]);
+
   // Convert tree to React Flow nodes/edges
   useEffect(() => {
     if (!treeData) return;
     const { newNodes, newEdges } = buildLayout(treeData, true);
 
     // Apply search filter (dim non-matching nodes)
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+    if (filteredIds !== null) {
       for (const n of newNodes) {
-        const d = n.data as any;
-        const matches =
-          d.message?.toLowerCase().includes(q) ||
-          d.branch?.toLowerCase().includes(q) ||
-          (d.tags as string[] | undefined)?.some((t: string) => t.toLowerCase().includes(q));
-        if (!matches) {
+        if (!filteredIds.has(n.id)) {
           n.style = { ...n.style, opacity: 0.25 };
         }
       }
@@ -393,7 +399,7 @@ function ProjectWorkspaceInner() {
 
     setNodes(newNodes);
     setEdges(newEdges);
-  }, [treeData, setNodes, setEdges, buildLayout, searchQuery]);
+  }, [treeData, setNodes, setEdges, buildLayout, filteredIds]);
 
   // Save positions on drag
   const onNodeDragStop = useCallback(
@@ -588,7 +594,7 @@ function ProjectWorkspaceInner() {
         return;
       }
       if (e.key === "Escape") {
-        if (searchVisible) { setSearchVisible(false); setSearchQuery(""); }
+        if (searchVisible) { setSearchVisible(false); setSearchFilters(EMPTY_FILTERS); }
         return;
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "h" && !isInput) {
@@ -623,7 +629,7 @@ function ProjectWorkspaceInner() {
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Top Bar */}
-      <div className="h-14 border-b border-border flex items-center px-4 gap-3 shrink-0 bg-card">
+      <div className="relative h-14 border-b border-border flex items-center px-4 gap-3 shrink-0 bg-card">
         <button
           onClick={() => navigate("/")}
           className="text-muted-foreground hover:text-foreground transition-colors"
@@ -637,21 +643,46 @@ function ProjectWorkspaceInner() {
           </span>
         )}
         <div className="flex-1" />
-        {searchVisible && (
-          <Input
-            className="w-48 h-8 text-xs"
-            placeholder="Search milestones..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            autoFocus
-          />
-        )}
+
+        {/* View mode toggle */}
+        <div className="flex items-center border border-border rounded-md overflow-hidden mr-1">
+          <button
+            onClick={() => setViewMode("graph")}
+            className={cn(
+              "px-2.5 py-1.5 text-xs flex items-center gap-1.5 transition-colors",
+              viewMode === "graph"
+                ? "bg-accent text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+            )}
+            title="Graph view"
+          >
+            <Network size={14} strokeWidth={1.5} />
+            Graph
+          </button>
+          <button
+            onClick={() => setViewMode("timeline")}
+            className={cn(
+              "px-2.5 py-1.5 text-xs flex items-center gap-1.5 transition-colors",
+              viewMode === "timeline"
+                ? "bg-accent text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+            )}
+            title="Timeline view"
+          >
+            <CalendarDays size={14} strokeWidth={1.5} />
+            Timeline
+          </button>
+        </div>
+
         <button
-          onClick={() => { setSearchVisible(!searchVisible); if (searchVisible) setSearchQuery(""); }}
-          className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-          title="Search milestones"
+          onClick={() => { setSearchVisible(!searchVisible); if (searchVisible) setSearchFilters(EMPTY_FILTERS); }}
+          className={cn(
+            "w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors",
+            (searchVisible || hasActiveFilters(searchFilters)) && "text-primary bg-accent/50"
+          )}
+          title="Search & filter milestones"
         >
-          <Search size={16} strokeWidth={1.5} />
+          <SlidersHorizontal size={16} strokeWidth={1.5} />
         </button>
         <button
           onClick={handleOpenStats}
@@ -660,7 +691,7 @@ function ProjectWorkspaceInner() {
         >
           <BarChart3 size={16} strokeWidth={1.5} />
         </button>
-        <Button variant="ghost" size="sm" onClick={handleResetLayout} className="text-muted-foreground">
+        <Button variant="ghost" size="sm" onClick={handleResetLayout} className={cn("text-muted-foreground", viewMode !== "graph" && "hidden")}>
           <RotateCcw size={14} className="mr-1.5" strokeWidth={2} />
           Reset Layout
         </Button>
@@ -674,49 +705,84 @@ function ProjectWorkspaceInner() {
           <Plus size={16} className="mr-1.5" strokeWidth={2} />
           Create Milestone
         </Button>
+
+        {/* Advanced search dropdown panel */}
+        <AdvancedSearch
+          visible={searchVisible}
+          projectTags={projectTags}
+          filters={searchFilters}
+          onFiltersChange={setSearchFilters}
+          onClose={() => { setSearchVisible(false); setSearchFilters(EMPTY_FILTERS); }}
+          matchCount={filteredIds ? filteredIds.size : treeData?.milestones.length ?? 0}
+          totalCount={treeData?.milestones.length ?? 0}
+        />
       </div>
 
-      {/* Canvas */}
+      {/* Canvas / Timeline */}
       <div className="flex-1 min-h-0">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onNodeClick={onNodeClick}
-          onNodeDragStop={onNodeDragStop}
-          nodeTypes={nodeTypes}
-          deleteKeyCode={null}
-          fitView
-          fitViewOptions={{ padding: 0.3 }}
-          minZoom={0.3}
-          maxZoom={2}
-          proOptions={{ hideAttribution: true }}
-        >
-          <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="hsl(var(--canvas-dot))" />
-          <Controls />
-          {minimapEnabled && (
-            <>
-              <MiniMap
-                nodeStrokeWidth={3}
-                zoomable
-                pannable
-                nodeColor="#4762ebbe"
-                nodeStrokeColor="#4763eb"
-                maskColor="rgba(71,99,235,0.25)"
-                style={{
-                  background: "#4763eb22",
-                  borderRadius: "10px",
-                  border: "1.25px solid #4762eb60",
-                  width: MM_W,
-                  height: MM_H,
-                }}
-                nodeBorderRadius={8}
-              />
-              <MinimapViewportOverlay />
-            </>
-          )}
-        </ReactFlow>
+        {viewMode === "graph" ? (
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onNodeClick={onNodeClick}
+            onNodeDragStop={onNodeDragStop}
+            nodeTypes={nodeTypes}
+            deleteKeyCode={null}
+            fitView
+            fitViewOptions={{ padding: 0.3 }}
+            minZoom={0.3}
+            maxZoom={2}
+            proOptions={{ hideAttribution: true }}
+          >
+            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="hsl(var(--canvas-dot))" />
+            <Controls />
+            {minimapEnabled && (
+              <>
+                <MiniMap
+                  nodeStrokeWidth={3}
+                  zoomable
+                  pannable
+                  nodeColor="#4762ebbe"
+                  nodeStrokeColor="#4763eb"
+                  maskColor="rgba(71,99,235,0.25)"
+                  style={{
+                    background: "#4763eb22",
+                    borderRadius: "10px",
+                    border: "1.25px solid #4762eb60",
+                    width: MM_W,
+                    height: MM_H,
+                  }}
+                  nodeBorderRadius={8}
+                />
+                <MinimapViewportOverlay />
+              </>
+            )}
+          </ReactFlow>
+        ) : (
+          <TimelineView
+            milestones={treeData?.milestones ?? []}
+            activeMilestoneId={treeData?.activeMilestoneId ?? null}
+            branches={treeData?.branches ?? []}
+            branchColorsEnabled={branchColorsEnabled}
+            projectTags={projectTags}
+            filteredIds={filteredIds}
+            onMilestoneClick={(ms) => {
+              setSelectedMilestone(ms);
+              const childrenMap = new Map<string, number>();
+              const buildMap = (nodes: TreeNode[]) => {
+                nodes.forEach((n) => {
+                  childrenMap.set(n.milestoneId, n.children.length);
+                  buildMap(n.children);
+                });
+              };
+              if (treeData) buildMap(treeData.tree);
+              setSelectedHasChildren((childrenMap.get(ms.milestoneId) ?? 0) > 0);
+              setPanelOpen(true);
+            }}
+          />
+        )}
       </div>
 
       {/* Milestone Panel */}
@@ -862,7 +928,7 @@ function ProjectWorkspaceInner() {
           <div className="space-y-3 text-sm">
             {([
               { keys: ["Ctrl", "M"], desc: "Create new milestone" },
-              { keys: ["Ctrl", "F"], desc: "Search milestones" },
+              { keys: ["Ctrl", "F"], desc: "Search & filter milestones" },
               { keys: ["Escape"], desc: "Close search / panels" },
               { keys: ["Ctrl", "H"], desc: "Show this shortcut panel" },
             ] as { keys: string[]; desc: string }[]).map(({ keys, desc }) => (
