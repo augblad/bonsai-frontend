@@ -111,8 +111,8 @@
 }
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 8px 2px hsl(var(--node-active-glow) / 0.4); }
-  50% { box-shadow: 0 0 16px 4px hsl(var(--node-active-glow) / 0.6); }
+  0%, 100% { box-shadow: 0 0 8px 2px var(--glow-color-low, hsl(var(--node-active-glow) / 0.4)); }
+  50% { box-shadow: 0 0 16px 4px var(--glow-color-high, hsl(var(--node-active-glow) / 0.6)); }
 }
 
 .node-active-glow {

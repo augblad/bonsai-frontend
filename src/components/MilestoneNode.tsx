@@ -1,8 +1,15 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { format } from "date-fns";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 export const BRANCH_COLOR_PALETTE = [
   "#3b82f6", // blue
@@ -39,6 +46,34 @@ interface MilestoneNodeData {
 
 function MilestoneNodeComponent({ data, selected }: NodeProps) {
   const d = data as unknown as MilestoneNodeData;
+  const [isHovered, setIsHovered] = useState(false);
+  const bc = d.branchColor;
+
+  // Use only longhand border-*-color properties to avoid shorthand conflicts.
+  // borderColor shorthand would clobber borderLeftColor, so we never use it.
+  const dynamicStyle: React.CSSProperties = {};
+  if (bc) {
+    dynamicStyle.borderLeftWidth = 3;
+    dynamicStyle.borderLeftColor = bc;
+
+    if (d.isActive) {
+      dynamicStyle.borderTopColor = bc;
+      dynamicStyle.borderRightColor = bc;
+      dynamicStyle.borderBottomColor = bc;
+      (dynamicStyle as Record<string, unknown>)["--tw-ring-color"] = hexToRgba(bc, 0.8);
+      (dynamicStyle as Record<string, unknown>)["--glow-color-low"] = hexToRgba(bc, 0.4);
+      (dynamicStyle as Record<string, unknown>)["--glow-color-high"] = hexToRgba(bc, 0.6);
+    } else if (selected) {
+      dynamicStyle.borderTopColor = bc;
+      dynamicStyle.borderRightColor = bc;
+      dynamicStyle.borderBottomColor = bc;
+    } else if (isHovered) {
+      const hoverColor = hexToRgba(bc, 0.5);
+      dynamicStyle.borderTopColor = hoverColor;
+      dynamicStyle.borderRightColor = hoverColor;
+      dynamicStyle.borderBottomColor = hoverColor;
+    }
+  }
 
   return (
     <div className="relative">
@@ -46,11 +81,14 @@ function MilestoneNodeComponent({ data, selected }: NodeProps) {
       <div
         className={cn(
           "px-4 py-3 rounded-xl border bg-node-bg border-node-border min-w-[180px] max-w-[240px] transition-all cursor-pointer select-none",
-          "hover:border-primary/50",
-          selected && "border-primary",
-          d.isActive && "ring-2 ring-node-glow node-active-glow border-node-glow"
+          !bc && "hover:border-primary/50",
+          selected && !bc && "border-primary",
+          d.isActive && "ring-2 node-active-glow",
+          d.isActive && !bc && "ring-node-glow border-node-glow"
         )}
-        style={d.branchColor ? { borderLeftWidth: 3, borderLeftColor: d.branchColor } : {}}
+        style={dynamicStyle}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
         <p className="text-sm font-medium truncate">{d.message}</p>
         <p className="text-[10px] text-muted-foreground mt-1">
