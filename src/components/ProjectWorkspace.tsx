@@ -263,15 +263,27 @@ function ProjectWorkspaceInner() {
 
   const loadTree = useCallback(async () => {
     setLoading(true);
-    const data = await projectTree(decodedPath);
+    const [data, tags] = await Promise.all([
+      projectTree(decodedPath),
+      projectGetTags(decodedPath).catch(() => [] as TagDefinition[]),
+    ]);
+    setProjectTags(tags);
     setTreeData(data);
-    projectGetTags(decodedPath).then((tags) => setProjectTags(tags)).catch(() => {});
     setLoading(false);
   }, [decodedPath]);
 
   useEffect(() => {
     loadTree();
   }, [loadTree]);
+
+  // Keep selectedMilestone in sync with latest treeData so the panel shows fresh data
+  useEffect(() => {
+    if (!treeData || !selectedMilestone) return;
+    const updated = treeData.milestones.find((m) => m.milestoneId === selectedMilestone.milestoneId);
+    if (updated && updated !== selectedMilestone) {
+      setSelectedMilestone(updated);
+    }
+  }, [treeData]);
 
   // Listen for auto-watch milestone creation events and refresh the tree
   useEffect(() => {
@@ -346,7 +358,7 @@ function ProjectWorkspaceInner() {
 
     data.tree.forEach((root) => traverse(root, 0));
     return { newNodes, newEdges };
-  }, [decodedPath, branchColorMap, canvasDirection]);
+  }, [decodedPath, branchColorMap, canvasDirection, tagColorMap]);
 
   // Convert tree to React Flow nodes/edges
   useEffect(() => {

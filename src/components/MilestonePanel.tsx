@@ -252,9 +252,12 @@ export function MilestonePanel({
                   className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-all ${
                     active
                       ? "border-transparent text-white"
-                      : "border-border text-muted-foreground hover:border-foreground/30"
+                      : "hover:opacity-80"
                   }`}
-                  style={active ? { backgroundColor: tag.color } : {}}
+                  style={active
+                    ? { backgroundColor: tag.color }
+                    : { borderColor: tag.color + "60", color: tag.color }
+                  }
                 >
                   {tag.label}
                 </button>
