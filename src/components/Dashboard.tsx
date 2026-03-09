@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
-import { MoreHorizontal, Trash2, Folder, Clock, GitBranch, Pencil, Search, ArrowUpDown } from "lucide-react";
-import { projectList, projectDelete, projectRename, autoWatchStatus, type ProjectSummary } from "@/lib/api";
+import { MoreHorizontal, Trash2, Folder, Clock, GitBranch, Pencil, Search, ArrowUpDown, Archive, ArchiveRestore, ChevronDown, ChevronRight } from "lucide-react";
+import { projectList, projectDelete, projectRename, projectArchive, projectUnarchive, autoWatchStatus, type ProjectSummary } from "@/lib/api";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -50,6 +50,7 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
   const [watchedPaths, setWatchedPaths] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("lastModified");
+  const [archivedExpanded, setArchivedExpanded] = useState(false);
   const navigate = useNavigate();
 
   const load = async () => {
@@ -87,26 +88,49 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
     }
 
     // Sort
-    result.sort((a, b) => {
+    const sorter = (a: ProjectSummary, b: ProjectSummary) => {
       switch (sortBy) {
         case "name":
           return a.name.localeCompare(b.name);
         case "lastModified": {
           const aTime = a.lastMilestoneAt ? new Date(a.lastMilestoneAt).getTime() : 0;
           const bTime = b.lastMilestoneAt ? new Date(b.lastMilestoneAt).getTime() : 0;
-          return bTime - aTime; // newest first
+          return bTime - aTime;
         }
         case "milestones":
-          return b.milestoneCount - a.milestoneCount; // most first
+          return b.milestoneCount - a.milestoneCount;
         case "created":
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         default:
           return 0;
       }
-    });
+    };
 
-    return result;
+    const active = result.filter((p) => !p.archived).sort(sorter);
+    const archived = result.filter((p) => p.archived).sort(sorter);
+
+    return { active, archived };
   }, [projects, searchQuery, sortBy]);
+
+  const handleArchive = async (project: ProjectSummary) => {
+    try {
+      await projectArchive(project.projectPath);
+      toast.success(`"${project.name}" archived`);
+      load();
+    } catch {
+      toast.error("Failed to archive project");
+    }
+  };
+
+  const handleUnarchive = async (project: ProjectSummary) => {
+    try {
+      await projectUnarchive(project.projectPath);
+      toast.success(`"${project.name}" restored`);
+      load();
+    } catch {
+      toast.error("Failed to unarchive project");
+    }
+  };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -190,11 +214,12 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
         </Select>
       </div>
 
-      {filteredAndSorted.length === 0 && searchQuery.trim() ? (
+      {filteredAndSorted.active.length === 0 && filteredAndSorted.archived.length === 0 && searchQuery.trim() ? (
         <p className="text-sm text-muted-foreground text-center py-12">No projects match "{searchQuery}"</p>
       ) : (
+      <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredAndSorted.map((project, i) => (
+        {filteredAndSorted.active.map((project, i) => (
           <ContextMenu key={project.id}>
             <ContextMenuTrigger>
               <motion.div
@@ -243,6 +268,10 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
                 <Pencil size={16} className="mr-2" strokeWidth={1.5} />
                 Rename Project
               </ContextMenuItem>
+              <ContextMenuItem onClick={() => handleArchive(project)}>
+                <Archive size={16} className="mr-2" strokeWidth={1.5} />
+                Archive Project
+              </ContextMenuItem>
               <ContextMenuItem
                 className="text-destructive focus:text-destructive"
                 onClick={() => setDeleteTarget(project)}
@@ -254,6 +283,82 @@ export function Dashboard({ onNewProject }: { onNewProject: () => void }) {
           </ContextMenu>
         ))}
       </div>
+
+      {/* Archived projects section */}
+      {filteredAndSorted.archived.length > 0 && (
+        <div className="mt-8">
+          <button
+            onClick={() => setArchivedExpanded((v) => !v)}
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-4"
+          >
+            {archivedExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            <Archive size={16} strokeWidth={1.5} />
+            Archived ({filteredAndSorted.archived.length})
+          </button>
+          {archivedExpanded && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredAndSorted.archived.map((project, i) => (
+                <ContextMenu key={project.id}>
+                  <ContextMenuTrigger>
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      onClick={() => navigate(`/project/${encodeURIComponent(project.projectPath)}`)}
+                      className="group cursor-pointer rounded-xl border border-border bg-card/60 p-5 hover:border-primary/40 hover:shadow-md transition-all opacity-75 hover:opacity-100"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground font-semibold text-sm">
+                          {project.name.charAt(0).toUpperCase()}
+                        </div>
+                      </div>
+                      <h3 className="font-medium text-sm mb-1">{project.name}</h3>
+                      <p className="text-xs text-muted-foreground font-mono break-all mb-3">{project.projectPath}</p>
+                      {project.lastMilestoneMessage && (
+                        <p className="text-xs text-muted-foreground mb-2 truncate italic">
+                          Last: {project.lastMilestoneMessage}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <GitBranch size={14} strokeWidth={1.5} />
+                          {project.milestoneCount} milestones
+                        </span>
+                        {project.lastMilestoneAt && (
+                          <span className="flex items-center gap-1">
+                            <Clock size={14} strokeWidth={1.5} />
+                            {formatDistanceToNow(new Date(project.lastMilestoneAt), { addSuffix: true })}
+                          </span>
+                        )}
+                      </div>
+                    </motion.div>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent>
+                    <ContextMenuItem onClick={() => handleUnarchive(project)}>
+                      <ArchiveRestore size={16} className="mr-2" strokeWidth={1.5} />
+                      Unarchive Project
+                    </ContextMenuItem>
+                    <ContextMenuItem
+                      onClick={() => { setRenameTarget(project); setNewName(project.name); }}
+                    >
+                      <Pencil size={16} className="mr-2" strokeWidth={1.5} />
+                      Rename Project
+                    </ContextMenuItem>
+                    <ContextMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => setDeleteTarget(project)}
+                    >
+                      <Trash2 size={16} className="mr-2" strokeWidth={1.5} />
+                      Delete Project
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      </>
       )}
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>

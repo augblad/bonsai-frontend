@@ -11,6 +11,7 @@ export interface ProjectSummary {
   lastMilestoneAt: string | null;
   milestoneCount: number;
   lastMilestoneMessage: string | null;
+  archived?: boolean;
 }
 
 export interface TreeNode {
@@ -448,5 +449,19 @@ export async function projectStorageStats(projectPath: string): Promise<{ totalB
 /** Rename a project. */
 export async function projectRename(projectPath: string, newName: string): Promise<{ status: string }> {
   if (eApi) return eApi.projectRename(projectPath, newName);
+  return { status: "success" };
+}
+
+// ── Project Archive ────────────────────────────────────────
+
+/** Archive a project (hides from active list, stops auto-watch). */
+export async function projectArchive(projectPath: string): Promise<{ status: string }> {
+  if (eApi) return eApi.projectArchive(projectPath);
+  return { status: "success" };
+}
+
+/** Unarchive a project (restores to active list). */
+export async function projectUnarchive(projectPath: string): Promise<{ status: string }> {
+  if (eApi) return eApi.projectUnarchive(projectPath);
   return { status: "success" };
 }
