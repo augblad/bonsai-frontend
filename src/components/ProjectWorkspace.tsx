@@ -272,6 +272,17 @@ function ProjectWorkspaceInner() {
     setLoading(false);
   }, [decodedPath]);
 
+  // Silent refresh — updates tree data without showing the loading skeleton.
+  // Used when the panel is open so it doesn't flash closed.
+  const refreshTree = useCallback(async () => {
+    const [data, tags] = await Promise.all([
+      projectTree(decodedPath),
+      projectGetTags(decodedPath).catch(() => [] as TagDefinition[]),
+    ]);
+    setProjectTags(tags);
+    setTreeData(data);
+  }, [decodedPath]);
+
   useEffect(() => {
     loadTree();
   }, [loadTree]);
@@ -722,7 +733,7 @@ function ProjectWorkspaceInner() {
         projectPath={decodedPath}
         onBranchFromHere={handleBranchWithWarning}
         branching={branching}
-        onMilestoneUpdated={loadTree}
+        onMilestoneUpdated={refreshTree}
       />
 
       {/* Project Settings */}
