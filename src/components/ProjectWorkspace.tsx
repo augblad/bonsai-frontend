@@ -24,6 +24,7 @@ import {
   projectTree,
   projectList,
   milestoneCreate,
+  milestoneCreateInitial,
   milestoneRestore,
   milestoneDelete,
   projectHasChanges,
@@ -446,8 +447,13 @@ function ProjectWorkspaceInner() {
     if (!createMsg.trim()) return;
     setCreating(true);
     try {
-      const res = await milestoneCreate(decodedPath, createMsg, createDesc.trim() || undefined);
-      if (res.error === "duplicate_name") {
+      // If the project has no milestones yet (e.g. freshly cloned empty project),
+      // use milestoneCreateInitial; otherwise use milestoneCreate.
+      const hasMilestones = treeData && treeData.milestones && treeData.milestones.length > 0;
+      const res = hasMilestones
+        ? await milestoneCreate(decodedPath, createMsg, createDesc.trim() || undefined)
+        : await milestoneCreateInitial(decodedPath, createMsg, createDesc.trim() || undefined);
+      if ((res as any).error === "duplicate_name") {
         toast.error("A milestone with this name already exists in this project");
       } else {
         toast.success("Milestone created");
