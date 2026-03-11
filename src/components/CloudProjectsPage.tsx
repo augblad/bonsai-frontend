@@ -10,6 +10,10 @@ import {
   Shield,
   User,
   Clock,
+  Download,
+  CheckCircle2,
+  Loader2,
+  FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +28,8 @@ import { toast } from "sonner";
 import {
   cloudListProjects,
   cloudGetTeam,
+  cloudCloneProject,
+  cloudIsCloned,
   type CloudProject,
   type CloudTeamDetail,
 } from "@/lib/cloud-api";
@@ -50,6 +56,10 @@ export function CloudProjectsPage() {
   const [projects, setProjects] = useState<CloudProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [cloneStatus, setCloneStatus] = useState<Record<string, { cloned: boolean; localPath: string | null }>>({});
+  const [cloningId, setCloningId] = useState<string | null>(null);
+
+  const eApi = (window as any).electronAPI;
 
   const fetchData = async (showSpinner = true) => {
     if (!teamId) return;
@@ -62,6 +72,17 @@ export function CloudProjectsPage() {
       ]);
       setTeam(t);
       setProjects(p);
+
+      // Check clone status for each project
+      const statusMap: Record<string, { cloned: boolean; localPath: string | null }> = {};
+      for (const proj of p) {
+        try {
+          statusMap[proj.id] = await cloudIsCloned(proj.id);
+        } catch {
+          statusMap[proj.id] = { cloned: false, localPath: null };
+        }
+      }
+      setCloneStatus(statusMap);
     } catch (err: any) {
       toast.error(err.message || "Failed to load team data");
     } finally {
@@ -73,6 +94,33 @@ export function CloudProjectsPage() {
   useEffect(() => {
     fetchData();
   }, [teamId]);
+
+  const handleClone = async (project: CloudProject) => {
+    try {
+      // Open folder picker
+      const result = await eApi.openDirectory(
+        `Choose folder for "${project.name}"`,
+      );
+      if (result.canceled || !result.path) return;
+
+      setCloningId(project.id);
+      const cloneResult = await cloudCloneProject(project.id, result.path);
+
+      if (cloneResult.status === "success") {
+        toast.success(`"${project.name}" cloned successfully`);
+        setCloneStatus((prev) => ({
+          ...prev,
+          [project.id]: { cloned: true, localPath: result.path },
+        }));
+      } else {
+        toast.error(cloneResult.error || "Clone failed");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Clone failed");
+    } finally {
+      setCloningId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -152,43 +200,96 @@ export function CloudProjectsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projects.map((project) => (
-              <div
-                key={project.id}
-                className="rounded-xl border border-border bg-card p-5 hover:bg-accent transition-colors group"
-              >
-                {/* Project header */}
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm shrink-0">
-                    {project.icon
-                      ? <img src={project.icon} alt="" className="w-6 h-6 rounded" />
-                      : project.name.charAt(0).toUpperCase()}
+            {projects.map((project) => {
+              const cs = cloneStatus[project.id];
+              const isCloned = cs?.cloned ?? false;
+              const isCloning = cloningId === project.id;
+
+              return (
+                <div
+                  key={project.id}
+                  className="rounded-xl border border-border bg-card p-5 hover:bg-accent transition-colors group"
+                >
+                  {/* Project header */}
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm shrink-0">
+                      {project.icon
+                        ? <img src={project.icon} alt="" className="w-6 h-6 rounded" />
+                        : project.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-medium truncate group-hover:text-primary transition-colors">
+                        {project.name}
+                      </h3>
+                      {project.isPublic && (
+                        <Badge variant="secondary" className="text-[10px] mt-1">
+                          Public
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-medium truncate group-hover:text-primary transition-colors">
-                      {project.name}
-                    </h3>
-                    {project.isPublic && (
-                      <Badge variant="secondary" className="text-[10px] mt-1">
-                        Public
-                      </Badge>
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <GitBranch className="h-3.5 w-3.5" />
+                      {project.milestoneCount} milestone{project.milestoneCount !== 1 ? "s" : ""}
+                    </span>
+                    <span className="flex items-center gap-1 ml-auto">
+                      <Clock className="h-3.5 w-3.5" />
+                      {timeAgo(project.updatedAt)}
+                    </span>
+                  </div>
+
+                  {/* Clone / Cloned button */}
+                  <div className="mt-4">
+                    {isCloned ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full text-green-600 border-green-600/30 hover:bg-green-600/10"
+                            onClick={() => {
+                              if (cs?.localPath) {
+                                navigate("/");
+                                toast.info(`Project synced at: ${cs.localPath}`);
+                              }
+                            }}
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                            Cloned & Syncing
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          {cs?.localPath ?? "Linked locally"}
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => handleClone(project)}
+                        disabled={isCloning}
+                      >
+                        {isCloning ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                            Cloning…
+                          </>
+                        ) : (
+                          <>
+                            <Download className="h-3.5 w-3.5 mr-1.5" />
+                            Clone to Local
+                          </>
+                        )}
+                      </Button>
                     )}
                   </div>
                 </div>
-
-                {/* Stats */}
-                <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <GitBranch className="h-3.5 w-3.5" />
-                    {project.milestoneCount} milestone{project.milestoneCount !== 1 ? "s" : ""}
-                  </span>
-                  <span className="flex items-center gap-1 ml-auto">
-                    <Clock className="h-3.5 w-3.5" />
-                    {timeAgo(project.updatedAt)}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

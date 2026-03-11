@@ -82,3 +82,31 @@ export const cloudGetNotifications = (limit?: number) => eApi.cloudGetNotificati
 export const cloudGetUnreadCount = (): Promise<number> => eApi.cloudGetUnreadCount();
 export const cloudMarkNotificationRead = (id: string) => eApi.cloudMarkNotificationRead(id);
 export const cloudMarkAllRead = () => eApi.cloudMarkAllRead();
+
+// Clone & Sync
+export const cloudCloneProject = (
+  cloudProjectId: string,
+  localPath: string,
+): Promise<{ status: 'success' | 'error'; error?: string }> =>
+  eApi.cloudCloneProject(cloudProjectId, localPath);
+
+export const cloudSyncPush = (
+  localPath: string,
+): Promise<{ status: 'success' | 'skipped' | 'error'; error?: string }> =>
+  eApi.cloudSyncPush(localPath);
+
+export const cloudSyncStatus = (
+  localPath: string,
+): Promise<{ linked: boolean; cloudProjectId: string | null }> =>
+  eApi.cloudSyncStatus(localPath);
+
+export const cloudIsCloned = (
+  cloudProjectId: string,
+): Promise<{ cloned: boolean; localPath: string | null }> =>
+  eApi.cloudIsCloned(cloudProjectId);
+
+export const cloudLinkProject = (localPath: string, cloudProjectId: string) =>
+  eApi.cloudLinkProject(localPath, cloudProjectId);
+
+export const cloudGetLinks = (): Promise<Record<string, string>> =>
+  eApi.cloudGetLinks();
