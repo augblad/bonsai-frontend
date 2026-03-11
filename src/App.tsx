@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -11,6 +11,10 @@ import { ProjectWorkspace } from "@/components/ProjectWorkspace";
 import { SettingsPage } from "@/components/SettingsPage";
 import { AboutPage } from "@/components/AboutPage";
 import { CreateProjectModal } from "@/components/CreateProjectModal";
+import { CloudLoginPage } from "@/components/CloudLoginPage";
+import { CloudTeamsPage } from "@/components/CloudTeamsPage";
+import { CloudProjectsPage } from "@/components/CloudProjectsPage";
+import { cloudStatus, type CloudUser } from "@/lib/cloud-api";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -18,6 +22,14 @@ const queryClient = new QueryClient();
 const App = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [cloudUser, setCloudUser] = useState<CloudUser | null>(null);
+
+  // Restore cloud auth state on mount
+  useEffect(() => {
+    cloudStatus().then((s) => {
+      if (s.loggedIn && s.user) setCloudUser(s.user);
+    });
+  }, []);
 
   const handleCreated = useCallback(() => {
     setRefreshKey((k) => k + 1);
@@ -49,6 +61,33 @@ const App = () => {
                   <Route path="/project/:projectPath" element={<ProjectWorkspace />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="/about" element={<AboutPage />} />
+                  <Route
+                    path="/cloud"
+                    element={
+                      cloudUser ? (
+                        <CloudTeamsPage
+                          user={cloudUser}
+                          onLoggedOut={() => setCloudUser(null)}
+                        />
+                      ) : (
+                        <CloudLoginPage
+                          onLoggedIn={(u) => setCloudUser(u)}
+                        />
+                      )
+                    }
+                  />
+                  <Route
+                    path="/cloud/team/:teamId"
+                    element={
+                      cloudUser ? (
+                        <CloudProjectsPage />
+                      ) : (
+                        <CloudLoginPage
+                          onLoggedIn={(u) => setCloudUser(u)}
+                        />
+                      )
+                    }
+                  />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>

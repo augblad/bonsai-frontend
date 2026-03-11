@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Plus, Settings, Info } from "lucide-react";
+import { Home, Plus, Settings, Info, Cloud } from "lucide-react";
 import { IconLeafFilled } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navItems = [
   { icon: Home, label: "Dashboard", path: "/" },
+  { icon: Cloud, label: "Cloud", path: "/cloud" },
 ];
 
 export function AppSidebar({ onNewProject }: { onNewProject: () => void }) {
@@ -32,7 +33,7 @@ export function AppSidebar({ onNewProject }: { onNewProject: () => void }) {
               onClick={() => navigate(item.path)}
               className={cn(
                 "w-9 h-9 flex items-center justify-center rounded-lg transition-colors",
-                location.pathname === item.path
+                (item.path === "/" ? location.pathname === "/" : location.pathname.startsWith(item.path))
                   ? "bg-accent text-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground"
               )}
